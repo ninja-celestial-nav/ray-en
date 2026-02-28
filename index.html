@@ -856,48 +856,64 @@
 
         function spawnWord() {
             if (gameState !== 'playing') return;
-            const word = customWords[Math.floor(Math.random() * customWords.length)];
-            const emoji = getEmoji(word);
 
-            const w = 80 * scale; const h = 90 * scale; // Taller to fit emoji + text
-            const x = rand(10, canvas.width - w - 10);
+            // Phase 10: Multi-Spawning. 1 to 3 items at once.
+            const spawnCount = Math.floor(Math.random() * 3) + 1;
 
-            // Phase 7: Golden Apple Spawn Chance (8%)
-            const isGoldenApple = Math.random() < 0.08;
-            const finalWord = isGoldenApple ? 'BONUS' : word;
-            const finalEmoji = isGoldenApple ? '🍎' : emoji;
+            let didSpawnValidTarget = false;
 
-            wordsInPlay.push({
-                x,
-                y: -h * 2,
-                w,
-                h,
-                word: finalWord,
-                emoji: finalEmoji,
-                isGoldenApple,
-                speed: (canvas.height / 8) * speedMult,
-                initialX: x, // For drifting
-                time: Math.random() * 100 // Random phase
-            });
+            for (let i = 0; i < spawnCount; i++) {
+                const word = customWords[Math.floor(Math.random() * customWords.length)];
+                const emoji = getEmoji(word);
 
-            // If we don't have a target, or there's a 30% chance to switch target when spawning new things
-            // Golden Apples don't change the current targeting logic
-            if (!isGoldenApple && (!currentTarget.word || Math.random() < 0.3)) {
-                currentTarget = { word, emoji };
-                // HUD Update for New Target
-                if (isListeningMode) {
-                    $('hud-target-icon').innerText = '🔊';
-                    $('hud-target-word').innerText = 'LISTEN!';
-                    speakWord(word);
-                } else {
-                    $('hud-target-icon').innerText = emoji;
-                    $('hud-target-word').innerText = word;
-                    speakWord('Shoot ' + word); // Phase 5 voice line
+                const w = 80 * scale; const h = 90 * scale;
+                const x = rand(10, canvas.width - w - 10);
+
+                // Phase 7: Golden Apple Spawn Chance (8%)
+                const isGoldenApple = Math.random() < 0.08;
+                // Phase 10: TNT Block Spawn Chance (12%)
+                const isTNT = !isGoldenApple && Math.random() < 0.12;
+
+                let finalWord = word;
+                let finalEmoji = emoji;
+
+                if (isGoldenApple) { finalWord = 'BONUS'; finalEmoji = '🍎'; }
+                else if (isTNT) { finalWord = 'TNT'; finalEmoji = '🧨'; }
+
+                wordsInPlay.push({
+                    x,
+                    y: -(h * 2) - rand(0, h * 1.5), // Stagger vertical start slightly
+                    w,
+                    h,
+                    word: finalWord,
+                    emoji: finalEmoji,
+                    isGoldenApple,
+                    isTNT,
+                    speed: (canvas.height / 8) * speedMult * rand(0.9, 1.2), // Slight variance in speed
+                    initialX: x,
+                    time: Math.random() * 100
+                });
+
+                // Target logic: only valid if not an apple and not TNT
+                if (!isGoldenApple && !isTNT && !didSpawnValidTarget && (!currentTarget.word || Math.random() < 0.3)) {
+                    currentTarget = { word: finalWord, emoji: finalEmoji };
+                    didSpawnValidTarget = true;
+
+                    // HUD Update for New Target
+                    if (isListeningMode) {
+                        $('hud-target-icon').innerText = '🔊';
+                        $('hud-target-word').innerText = 'LISTEN!';
+                        speakWord(finalWord);
+                    } else {
+                        $('hud-target-icon').innerText = finalEmoji;
+                        $('hud-target-word').innerText = finalWord;
+                        speakWord('Shoot ' + finalWord); // Phase 5 voice line
+                    }
+
+                    const pnl = document.querySelector('.hud-center-panel');
+                    pnl.style.transform = window.innerWidth <= 500 ? 'translateX(-50%) scale(1.1)' : 'translateX(-20%) scale(1.1)';
+                    setTimeout(() => pnl.style.transform = window.innerWidth <= 500 ? 'translateX(-50%) scale(1)' : 'translateX(-20%) scale(1)', 150);
                 }
-
-                const pnl = document.querySelector('.hud-center-panel');
-                pnl.style.transform = window.innerWidth <= 500 ? 'translateX(-50%) scale(1.1)' : 'translateX(-20%) scale(1.1)';
-                setTimeout(() => pnl.style.transform = window.innerWidth <= 500 ? 'translateX(-50%) scale(1)' : 'translateX(-20%) scale(1)', 150);
             }
         }
 
@@ -977,6 +993,17 @@
                             wordsInPlay.splice(i, 1); arrows.splice(j, 1);
                             updateHUD();
                             break;
+                        } else if (w.isTNT) {
+                            // Hit TNT -> Massive explosion penalty
+                            playSynth('sawtooth', 100, 20, 0.4);
+                            createParticles(w.x + w.w / 2, w.y + w.h / 2, '#FFA500'); // Orange
+                            createParticles(w.x + w.w / 2, w.y + w.h / 2, '#FF4500'); // Red
+                            lives -= 1.0;
+                            score = Math.max(0, score - 10);
+                            wordsInPlay.splice(i, 1); arrows.splice(j, 1);
+                            updateHUD();
+                            if (lives <= 0) die();
+                            break;
                         }
 
                         // Phase 5: Target Checking
@@ -1031,15 +1058,22 @@
 
             // Draw Target Blocks (White square + Black border)
             wordsInPlay.forEach(w => {
-                ctx.fillStyle = w.isGoldenApple ? '#FFF8DC' : '#FFF'; // Cornsilk background for apples
+                let bgColor = '#FFF'; // Default white
+                let bordercolor = '#000'; // Default black
+
+                if (w.isGoldenApple) { bgColor = '#FFF8DC'; bordercolor = '#FFD700'; }
+                else if (w.isTNT) { bgColor = '#FF4500'; bordercolor = '#8B0000'; }
+
+                ctx.fillStyle = bgColor;
                 ctx.fillRect(w.x, w.y, w.w, w.h);
 
-                ctx.strokeStyle = w.isGoldenApple ? '#FFD700' : '#000'; // Gold border for apples
+                ctx.strokeStyle = bordercolor;
                 ctx.lineWidth = 4 * scale;
                 ctx.strokeRect(w.x, w.y, w.w, w.h);
 
                 // Draw Inner Shadow effect
-                ctx.strokeStyle = '#CCC'; ctx.lineWidth = 4 * scale;
+                ctx.strokeStyle = w.isTNT ? '#B22222' : '#CCC';
+                ctx.lineWidth = 4 * scale;
                 ctx.beginPath(); ctx.moveTo(w.x + w.w, w.y); ctx.lineTo(w.x, w.y); ctx.lineTo(w.x, w.y + w.h); ctx.stroke();
 
                 // Draw Emoji (Always visible, even in listening mode)
