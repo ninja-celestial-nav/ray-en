@@ -722,7 +722,12 @@
         function speakWord(word) {
             if (synth.speaking) synth.cancel();
             const u = new SpeechSynthesisUtterance(word);
-            u.lang = 'en-US'; u.rate = 0.85; synth.speak(u);
+            u.lang = 'en-US'; u.rate = 0.9; synth.speak(u);
+        }
+
+        function speakPraise(word) {
+            const u = new SpeechSynthesisUtterance(word);
+            u.lang = 'en-US'; u.rate = 1.0; synth.speak(u);
         }
 
         let audioCtx;
@@ -852,10 +857,16 @@
             const w = 80 * scale; const h = 90 * scale; // Taller to fit emoji + text
             const x = rand(10, canvas.width - w - 10);
 
-            wordsInPlay.push({ x, y: -h * 2, w, h, word, emoji, speed: (canvas.height / 8) * speedMult });
+            // Phase 7: Golden Apple Spawn Chance (8%)
+            const isGoldenApple = Math.random() < 0.08;
+            const finalWord = isGoldenApple ? 'BONUS' : word;
+            const finalEmoji = isGoldenApple ? '🍎' : emoji;
+
+            wordsInPlay.push({ x, y: -h * 2, w, h, word: finalWord, emoji: finalEmoji, isGoldenApple, speed: (canvas.height / 8) * speedMult });
 
             // If we don't have a target, or there's a 30% chance to switch target when spawning new things
-            if (!currentTarget.word || Math.random() < 0.3) {
+            // Golden Apples don't change the current targeting logic
+            if (!isGoldenApple && (!currentTarget.word || Math.random() < 0.3)) {
                 currentTarget = { word, emoji };
                 // HUD Update for New Target
                 if (isListeningMode) {
@@ -910,8 +921,21 @@
 
                 // Hit detection
                 for (let j = arrows.length - 1; j >= 0; j--) {
-                    const a = arrows[j];
-                    if (a.x > w.x - a.w / 2 && a.x < w.x + w.w + a.w / 2 && a.y > w.y && a.y < w.y + w.h) {
+                    const hitX = a.x > w.x + w.w * 0.15 - a.w / 2 && a.x < w.x + w.w * 0.85 + a.w / 2;
+                    const hitY = a.y > w.y + w.h * 0.15 && a.y < w.y + w.h * 0.85;
+
+                    if (hitX && hitY) {
+
+                        if (w.isGoldenApple) {
+                            playHit();
+                            speakPraise("Extra Life!");
+                            createParticles(w.x + w.w / 2, w.y + w.h / 2, '#FFD700');
+                            lives = Math.min(lives + 1, 5);
+                            score += 5;
+                            wordsInPlay.splice(i, 1); arrows.splice(j, 1);
+                            updateHUD();
+                            break;
+                        }
 
                         // Phase 5: Target Checking
                         if (w.word === currentTarget.word) {
@@ -965,9 +989,11 @@
 
             // Draw Target Blocks (White square + Black border)
             wordsInPlay.forEach(w => {
-                ctx.fillStyle = '#FFF';
+                ctx.fillStyle = w.isGoldenApple ? '#FFF8DC' : '#FFF'; // Cornsilk background for apples
                 ctx.fillRect(w.x, w.y, w.w, w.h);
-                ctx.strokeStyle = '#000'; ctx.lineWidth = 4 * scale;
+
+                ctx.strokeStyle = w.isGoldenApple ? '#FFD700' : '#000'; // Gold border for apples
+                ctx.lineWidth = 4 * scale;
                 ctx.strokeRect(w.x, w.y, w.w, w.h);
 
                 // Draw Inner Shadow effect
