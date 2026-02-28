@@ -628,6 +628,7 @@
         let isListeningMode = false;
         let speedMult = 1.0;
 
+        let playerAvatarImg = null; // Store user uploaded selfie
         // --- FILE UPLOAD HANDLERS ---
         function handleImageUpload(event) {
             const file = event.target.files[0];
@@ -638,6 +639,10 @@
                     avatarBox.style.backgroundImage = `url(${e.target.result})`;
                     avatarBox.style.backgroundSize = 'cover';
                     avatarBox.style.backgroundPosition = 'center';
+
+                    // Save to the in-game character
+                    playerAvatarImg = new Image();
+                    playerAvatarImg.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
             }
@@ -862,7 +867,18 @@
             const finalWord = isGoldenApple ? 'BONUS' : word;
             const finalEmoji = isGoldenApple ? '🍎' : emoji;
 
-            wordsInPlay.push({ x, y: -h * 2, w, h, word: finalWord, emoji: finalEmoji, isGoldenApple, speed: (canvas.height / 8) * speedMult });
+            wordsInPlay.push({
+                x,
+                y: -h * 2,
+                w,
+                h,
+                word: finalWord,
+                emoji: finalEmoji,
+                isGoldenApple,
+                speed: (canvas.height / 8) * speedMult,
+                initialX: x, // For drifting
+                time: Math.random() * 100 // Random phase
+            });
 
             // If we don't have a target, or there's a 30% chance to switch target when spawning new things
             // Golden Apples don't change the current targeting logic
@@ -910,6 +926,15 @@
             for (let i = wordsInPlay.length - 1; i >= 0; i--) {
                 const w = wordsInPlay[i];
                 w.y += w.speed * dt;
+
+                // Drift logic for Golden Apple
+                if (w.isGoldenApple) {
+                    w.time += dt;
+                    // Drifts left and right continuously in a sine-wave pattern
+                    w.x = w.initialX + Math.sin(w.time * 3) * (80 * scale);
+                    // Keep apple within screen bounds just in case
+                    w.x = Math.max(0, Math.min(canvas.width - w.w, w.x));
+                }
 
                 if (w.y > canvas.height) { // Miss
                     wordsInPlay.splice(i, 1);
@@ -1020,10 +1045,21 @@
             ctx.fillStyle = '#1E90FF';
             ctx.fillRect(player.x - pw / 2, player.y - ph / 2 + (ph * 0.3), pw, ph * 0.7);
 
-            // Head (Pink/Skin block)
-            ctx.fillStyle = '#FFC0CB';
+            // Head (Pink/Skin block or Custom Avatar)
             const headSize = pw * 0.9;
-            ctx.fillRect(player.x - headSize / 2, player.y - ph / 2, headSize, headSize);
+            const headX = player.x - headSize / 2;
+            const headY = player.y - ph / 2;
+
+            if (playerAvatarImg && playerAvatarImg.complete) {
+                // Draw user selfie
+                ctx.drawImage(playerAvatarImg, headX, headY, headSize, headSize);
+                // Optional stroke for clarity
+                ctx.strokeStyle = '#000'; ctx.lineWidth = 2 * scale;
+                ctx.strokeRect(headX, headY, headSize, headSize);
+            } else {
+                ctx.fillStyle = '#FFC0CB';
+                ctx.fillRect(headX, headY, headSize, headSize);
+            }
 
             // Draw Bow (Arc)
             ctx.strokeStyle = '#8B4513'; ctx.lineWidth = 4 * scale;
