@@ -944,8 +944,25 @@
                     continue;
                 }
 
+                // Player Collision
+                const pW = player.logicalWidth * scale;
+                const pH = player.logicalHeight * scale;
+                const pX = player.x - pW / 2;
+                const pY = player.y - pH / 2;
+
+                if (w.x < pX + pW && w.x + w.w > pX && w.y < pY + pH && w.y + w.h > pY) {
+                    playSynth('sawtooth', 150, 50, 0.3); // Hit player sound
+                    createParticles(w.x + w.w / 2, w.y + w.h / 2, 'red');
+                    lives -= 0.5;
+                    wordsInPlay.splice(i, 1);
+                    updateHUD();
+                    if (lives <= 0) die();
+                    continue;
+                }
+
                 // Hit detection
                 for (let j = arrows.length - 1; j >= 0; j--) {
+                    const a = arrows[j];
                     const hitX = a.x > w.x + w.w * 0.15 - a.w / 2 && a.x < w.x + w.w * 0.85 + a.w / 2;
                     const hitY = a.y > w.y + w.h * 0.15 && a.y < w.y + w.h * 0.85;
 
@@ -1084,7 +1101,9 @@
 
         function updateHUD() {
             $('hud-exp').innerText = `EXP: ${score} / ${targetScore}`;
-            $('hud-hearts').innerText = '❤️'.repeat(Math.max(0, lives));
+            const fullHearts = Math.floor(lives);
+            const halfHeart = (lives - fullHearts > 0) ? '💔' : '';
+            $('hud-hearts').innerText = '❤️'.repeat(Math.max(0, fullHearts)) + halfHeart;
             $('final-score').innerText = score;
         }
 
