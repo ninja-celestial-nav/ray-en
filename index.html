@@ -1050,15 +1050,20 @@
             const headX = player.x - headSize / 2;
             const headY = player.y - ph / 2;
 
+            // Always draw the pink head background as a frame
+            ctx.fillStyle = '#FFC0CB';
+            ctx.fillRect(headX, headY, headSize, headSize);
+            ctx.strokeStyle = '#000'; ctx.lineWidth = 2 * scale;
+            ctx.strokeRect(headX, headY, headSize, headSize);
+
             if (playerAvatarImg && playerAvatarImg.complete) {
-                // Draw user selfie
-                ctx.drawImage(playerAvatarImg, headX, headY, headSize, headSize);
-                // Optional stroke for clarity
-                ctx.strokeStyle = '#000'; ctx.lineWidth = 2 * scale;
-                ctx.strokeRect(headX, headY, headSize, headSize);
-            } else {
-                ctx.fillStyle = '#FFC0CB';
-                ctx.fillRect(headX, headY, headSize, headSize);
+                // Draw user selfie embedded inside the pink frame (inset)
+                const padding = headSize * 0.15;
+                const innerSize = headSize - (padding * 2);
+                ctx.drawImage(playerAvatarImg, headX + padding, headY + padding, innerSize, innerSize);
+                // Inner border around the photo
+                ctx.strokeStyle = '#000'; ctx.lineWidth = 1 * scale;
+                ctx.strokeRect(headX + padding, headY + padding, innerSize, innerSize);
             }
 
             // Draw Bow (Arc)
