@@ -704,6 +704,9 @@
         let particles = [];
         let scale = 1;
 
+        let currentTarget = { word: '', emoji: '❓' }; // Phase 5 target system
+        const praiseWords = ['Good!', 'Great!', 'Excellent!', 'Awesome!', 'Perfect!'];
+
         const player = { logicalWidth: 50, logicalHeight: 90, x: 0, y: 0 };
         let targetMouseX = 0;
 
@@ -779,6 +782,7 @@
 
         function restartLevel() {
             score = 0; lives = 5; wordsInPlay = []; arrows = []; particles = [];
+            currentTarget = { word: '', emoji: '❓' };
             updateHUD();
             gameState = 'playing';
             showScreen('game-ui');
@@ -814,19 +818,24 @@
 
             wordsInPlay.push({ x, y: -h * 2, w, h, word, emoji, speed: (canvas.height / 8) * speedMult });
 
-            // HUD Update
-            if (isListeningMode) {
-                $('hud-target-icon').innerText = '🔊';
-                $('hud-target-word').innerText = 'LISTEN!';
-                speakWord(word);
-            } else {
-                $('hud-target-icon').innerText = emoji;
-                $('hud-target-word').innerText = word;
-            }
+            // If we don't have a target, or there's a 30% chance to switch target when spawning new things
+            if (!currentTarget.word || Math.random() < 0.3) {
+                currentTarget = { word, emoji };
+                // HUD Update for New Target
+                if (isListeningMode) {
+                    $('hud-target-icon').innerText = '🔊';
+                    $('hud-target-word').innerText = 'LISTEN!';
+                    speakWord(word);
+                } else {
+                    $('hud-target-icon').innerText = emoji;
+                    $('hud-target-word').innerText = word;
+                    speakWord('Shoot ' + word); // Phase 5 voice line
+                }
 
-            const pnl = document.querySelector('.hud-center-panel');
-            pnl.style.transform = window.innerWidth <= 500 ? 'translateX(-50%) scale(1.1)' : 'translateX(-20%) scale(1.1)';
-            setTimeout(() => pnl.style.transform = window.innerWidth <= 500 ? 'translateX(-50%) scale(1)' : 'translateX(-20%) scale(1)', 150);
+                const pnl = document.querySelector('.hud-center-panel');
+                pnl.style.transform = window.innerWidth <= 500 ? 'translateX(-50%) scale(1.1)' : 'translateX(-20%) scale(1.1)';
+                setTimeout(() => pnl.style.transform = window.innerWidth <= 500 ? 'translateX(-50%) scale(1)' : 'translateX(-20%) scale(1)', 150);
+            }
         }
 
         function createParticles(x, y, color) {
@@ -867,11 +876,34 @@
                 for (let j = arrows.length - 1; j >= 0; j--) {
                     const a = arrows[j];
                     if (a.x > w.x - a.w / 2 && a.x < w.x + w.w + a.w / 2 && a.y > w.y && a.y < w.y + w.h) {
-                        playHit();
-                        if (!isListeningMode) speakWord(w.word); // Speak block word upon hit in normal mode
-                        createParticles(w.x + w.w / 2, w.y + w.h / 2, '#FFD700');
 
-                        score += 10;
+                        // Phase 5: Target Checking
+                        if (w.word === currentTarget.word) {
+                            playHit();
+
+                            // Random Praise
+                            if (Math.random() < 0.4) {
+                                speakWord(praiseWords[Math.floor(Math.random() * praiseWords.length)]);
+                            } else if (!isListeningMode) {
+                                speakWord(w.word);
+                            }
+
+                            createParticles(w.x + w.w / 2, w.y + w.h / 2, '#FFD700');
+
+                            // Distance scoring
+                            const baseScore = 5;
+                            const distanceBonus = Math.floor(Math.max(0, ((canvas.height - w.y) / canvas.height) * 15));
+                            score += (baseScore + distanceBonus);
+
+                            // Reset target so a new one spawns
+                            currentTarget = { word: '', emoji: '❓' };
+                        } else {
+                            // Hit the wrong block -> Penalty
+                            playSynth('sawtooth', 200, 100, 0.2);
+                            createParticles(w.x + w.w / 2, w.y + w.h / 2, '#FF0000');
+                            score = Math.max(0, score - 5); // Deduct points, don't drop below 0
+                        }
+
                         wordsInPlay.splice(i, 1); arrows.splice(j, 1);
                         updateHUD();
 
@@ -906,11 +938,10 @@
                 ctx.strokeStyle = '#CCC'; ctx.lineWidth = 4 * scale;
                 ctx.beginPath(); ctx.moveTo(w.x + w.w, w.y); ctx.lineTo(w.x, w.y); ctx.lineTo(w.x, w.y + w.h); ctx.stroke();
 
-                // Draw Emoji
+                // Draw Emoji (Always visible, even in listening mode)
                 ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                const hidden = isListeningMode ? '❓' : w.emoji;
                 ctx.font = `${Math.floor(40 * scale)}px Arial`; // emojis format better in standard fonts
-                ctx.fillText(hidden, w.x + w.w / 2, w.y + w.h / 2 - (10 * scale));
+                ctx.fillText(w.emoji, w.x + w.w / 2, w.y + w.h / 2 - (10 * scale));
 
                 // Draw Text
                 const text = isListeningMode ? 'LISTEN' : w.word.toUpperCase();
