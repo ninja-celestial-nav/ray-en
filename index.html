@@ -6,6 +6,13 @@
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>English Archer - Ray Edition</title>
+
+    <!-- PWA Setup -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#333333">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+
     <!-- Use a robust pixel font -->
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
@@ -503,8 +510,8 @@
                             onchange="handleVideoUpload(event)">
                         <button class="btn pixel-border btn-yellow"
                             onclick="document.getElementById('video-input').click()">📁 影片</button>
-
-                        <button class="btn pixel-border btn-blue" onclick="alert('PWA install intent')">⬇️ 加入桌面</button>
+                        <button id="pwa-install-btn" class="btn pixel-border btn-blue" style="display: none;"
+                            onclick="installPWA()">⬇️ 加入桌面</button>
                     </div>
                 </div>
             </div>
@@ -739,6 +746,35 @@
 
         function playHit() { playSynth('square', 440, 880, 0.1); }
         function playShoot() { playSynth('triangle', 600, 100, 0.1); }
+
+        // --- PWA INSTALLATION LOGIC ---
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const installBtn = $('pwa-install-btn');
+            if (installBtn) installBtn.style.display = 'inline-block';
+        });
+
+        async function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    $('pwa-install-btn').style.display = 'none';
+                }
+                deferredPrompt = null;
+            }
+        }
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(reg => {
+                    console.log('SW registered!', reg);
+                }).catch(err => console.log('SW registration failed', err));
+            });
+        }
 
         window.onload = () => {
             canvas = $('game-canvas');

@@ -1,0 +1,21 @@
+{
+  "name": "English Archer - Ray Edition",
+  "short_name": "EnglishArcher",
+  "description": "A Minecraft-themed English vocabulary game.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#7E7E7E",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>",
+      "type": "image/svg+xml",
+      "sizes": "192x192"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    }
+  ]
+}
