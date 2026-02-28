@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>English Archer - Ray Edition</title>
+    <!-- Use a robust pixel font -->
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Authentic UI Colors mapped from screenshot */
+            --bg-checker: #7E7E7E;
+            --bg-checker-dark: #707070;
+            --panel-bg: #DCDCDC;
+            --panel-outer-border: #000000;
+            --panel-inner-light: #FFFFFF;
+            --panel-inner-dark: #555555;
+
+            --btn-gray: #BDBDBD;
+            --btn-gray-dark: #8B8B8B;
+            --btn-yellow: #FFD700;
+            --btn-yellow-dark: #B8860B;
+            --btn-blue: #4682B4;
+            --btn-blue-dark: #2F4F4F;
+            --btn-green: #32CD32;
+            --btn-green-dark: #006400;
+            --btn-red: #FF6347;
+            --btn-red-dark: #8B0000;
+
+            --text-dark: #222;
+            --text-gold: #FFD700;
+
+            --hud-bg-black: rgba(34, 34, 34, 0.9);
+            --hud-bg-white: rgba(255, 255, 255, 0.95);
+
+            --game-sky: #74B9FF;
+            --game-grass: #55EFC4;
+            --game-dirt: #8D6E63;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            margin: 0;
+            padding: 0;
+            font-family: 'VT323', monospace;
+        }
+
+        body,
+        html {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--bg-checker);
+            background-image:
+                linear-gradient(45deg, var(--bg-checker-dark) 25%, transparent 25%, transparent 75%, var(--bg-checker-dark) 75%, var(--bg-checker-dark)),
+                linear-gradient(45deg, var(--bg-checker-dark) 25%, transparent 25%, transparent 75%, var(--bg-checker-dark) 75%, var(--bg-checker-dark));
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+            touch-action: none;
+        }
+
+        /* 3D Pixel Border Mixin */
+        .pixel-border {
+            border: 4px solid var(--panel-outer-border);
+            position: relative;
+        }
+
+        .pixel-border::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-top: 4px solid var(--panel-inner-light);
+            border-left: 4px solid var(--panel-inner-light);
+            border-bottom: 4px solid var(--panel-inner-dark);
+            border-right: 4px solid var(--panel-inner-dark);
+            pointer-events: none;
+        }
+
+        .pixel-border-inset {
+            border: 4px solid transparent;
+            /* Outer handled by parent */
+            border-top: 4px solid var(--panel-inner-dark);
+            border-left: 4px solid var(--panel-inner-dark);
+            border-bottom: 4px solid var(--panel-inner-light);
+            border-right: 4px solid var(--panel-inner-light);
+        }
+
+        /* --- SCREENS --- */
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+        }
+
+        /* --- MAIN MENU --- */
+        #main-menu {
+            padding: 20px;
+            gap: 15px;
+        }
+
+        .menu-panel {
+            background: var(--panel-bg);
+            width: 100%;
+            max-width: 600px;
+            padding: 15px;
+            position: relative;
+        }
+
+        /* Panel Headers (floating on top-left of border) */
+        .panel-header {
+            position: absolute;
+            top: -12px;
+            left: 16px;
+            background: var(--panel-outer-border);
+            color: var(--text-gold);
+            padding: 2px 8px;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            z-index: 2;
+        }
+
+        /* Profile Layout */
+        .profile-layout {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .avatar-box {
+            width: 80px;
+            height: 80px;
+            background: #222;
+            border: 4px solid var(--panel-inner-dark);
+            flex-shrink: 0;
+        }
+
+        .profile-info {
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .profile-name {
+            font-size: 2rem;
+            color: #000;
+            margin-bottom: 10px;
+        }
+
+        .profile-btn-group {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Buttons */
+        .btn {
+            background: var(--btn-gray);
+            color: #000;
+            padding: 8px 16px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            position: relative;
+            text-shadow: 1px 1px 0 #FFF;
+            transition: transform 0.1s;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-yellow {
+            background: var(--btn-yellow);
+        }
+
+        .btn-blue {
+            background: var(--btn-blue);
+            color: #FFF;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        .btn-red {
+            background: var(--btn-red);
+            color: #FFF;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        .btn-green {
+            background: var(--btn-green);
+            color: #FFF;
+            text-shadow: 2px 2px 0 #000;
+            font-size: 3rem;
+            padding: 15px 40px;
+        }
+
+        /* Segments (Toggles) */
+        .section-title {
+            text-align: center;
+            font-size: 1.4rem;
+            color: #000;
+            margin: 15px 0 10px;
+            font-weight: bold;
+        }
+
+        .segment-group {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .segment-btn {
+            background: var(--btn-gray);
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 1.4rem;
+            color: #444;
+            border: 4px solid transparent;
+        }
+
+        .segment-btn.selected {
+            background: var(--panel-inner-light);
+            border-top: 4px solid var(--panel-inner-dark);
+            border-left: 4px solid var(--panel-inner-dark);
+            border-bottom: 4px solid var(--panel-inner-light);
+            border-right: 4px solid var(--panel-inner-light);
+            color: #000;
+            font-weight: bold;
+            box-shadow: inset 4px 4px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        /* Action Area */
+        .action-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .link-text {
+            color: var(--btn-blue);
+            text-decoration: underline;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        /* Advanced Input */
+        #custom-words-input {
+            width: 100%;
+            height: 80px;
+            margin-top: 10px;
+            background: #333;
+            color: #FFF;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 1.2rem;
+            display: none;
+            border: 4px solid var(--panel-inner-dark);
+        }
+
+        /* --- GAME SCREEN --- */
+        #game-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background: linear-gradient(to bottom,
+                    var(--game-sky) 0%,
+                    var(--game-sky) 38%,
+                    var(--game-grass) 38%,
+                    var(--game-grass) 42%,
+                    var(--game-dirt) 42%,
+                    var(--game-dirt) 100%);
+        }
+
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        /* HUD Overlays (z-index 10) */
+        #hud-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            padding: env(safe-area-inset-top, 10px) 10px 0 10px;
+        }
+
+        .hud-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        /* Left HUD - EXP/Hearts */
+        .hud-left-panel {
+            background: var(--hud-bg-black);
+            border: 4px solid var(--panel-inner-light);
+            border-right-color: #999;
+            border-bottom-color: #999;
+            padding: 10px 15px;
+            color: #FFF;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        #hud-exp {
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+        }
+
+        #hud-hearts {
+            font-size: 1.5rem;
+            color: var(--btn-red);
+            letter-spacing: 2px;
+        }
+
+        /* Center HUD - Target */
+        .hud-center-panel {
+            background: var(--hud-bg-white);
+            border: 6px solid var(--btn-yellow);
+            padding: 10px;
+            text-align: center;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
+            min-width: 100px;
+            transform: translateX(-20%);
+            /* Offset slightly based on the screenshot */
+        }
+
+        .hud-target-label {
+            font-size: 1rem;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        #hud-target-icon {
+            font-size: 3rem;
+            line-height: 1;
+        }
+
+        #hud-target-word {
+            font-size: 1.5rem;
+            color: #000;
+            font-weight: bold;
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+
+        /* Right HUD - Buttons */
+        .hud-right-group {
+            display: flex;
+            gap: 10px;
+            pointer-events: auto;
+        }
+
+        .hud-btn {
+            font-size: 1.2rem;
+            padding: 10px 15px;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
+            border: 4px solid #FFF;
+        }
+
+        .hud-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .hud-btn-exit {
+            background: var(--btn-yellow);
+            color: #000;
+            border-color: #FFF #999 #999 #FFF;
+        }
+
+        .hud-btn-pause {
+            background: var(--btn-gray);
+            color: #000;
+            border-color: #FFF #999 #999 #FFF;
+        }
+
+        /* Dialog Menus (Pause, Death, Victory) */
+        .dialog-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 20;
+            display: none;
+            /* Hidden by default */
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dialog-overlay.active {
+            display: flex;
+        }
+
+        .dialog-box {
+            background: var(--panel-bg);
+            padding: 30px;
+            text-align: center;
+            width: 80%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .dialog-title {
+            font-size: 3rem;
+            color: #000;
+            text-shadow: 2px 2px 0 #FFF;
+        }
+
+        #video-container {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 30;
+            background: black;
+        }
+
+        #victory-video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        @media (max-width: 500px) {
+            .profile-layout {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .hud-center-panel {
+                transform: none;
+                position: absolute;
+                top: 80px;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- MAIN MENU -->
+    <div id="main-menu" class="screen active">
+
+        <div class="menu-panel pixel-border">
+            <div class="panel-header">AGENT PROFILE</div>
+            <div class="profile-layout">
+                <div class="avatar-box"></div>
+                <div class="profile-info">
+                    <div class="profile-name">Welcome RAY!</div>
+                    <div class="profile-btn-group">
+                        <button class="btn pixel-border btn-yellow" onclick="alert('Camera intent')">📷 自拍</button>
+                        <button class="btn pixel-border btn-yellow" onclick="alert('Video intent')">📁 影片</button>
+                        <button class="btn pixel-border btn-blue" onclick="alert('PWA install intent')">⬇️ 加入桌面</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Hidden inputs stored from user request -->
+            <input type="hidden" id="video-url" value="./grok-video-a512f103-c25e-4b51-8fed-d091b5190ead.mp4">
+        </div>
+
+        <div class="menu-panel pixel-border">
+            <div class="panel-header">ADVENTURE MODE</div>
+
+            <div class="section-title">[ 選擇主題 THEME ]</div>
+            <div class="segment-group" id="theme-group">
+                <div class="segment-btn selected" data-val="school">SCHOOL</div>
+                <div class="segment-btn" data-val="body">BODY</div>
+                <div class="segment-btn" data-val="animals">ANIMALS</div>
+                <div class="segment-btn" data-val="life">LIFE</div>
+            </div>
+
+            <div class="section-title">[ 難度 SPEED ]</div>
+            <div class="segment-group" id="speed-group">
+                <div class="segment-btn" data-val="0.6">🐢 1</div>
+                <div class="segment-btn selected" data-val="1.0">🚶 3</div>
+                <div class="segment-btn" data-val="1.5">⚡ 7</div>
+            </div>
+        </div>
+
+        <div class="menu-panel pixel-border" style="padding: 10px;">
+            <div class="panel-header">ADVANCED</div>
+            <button class="btn btn-gray w-100" style="width: 100%; padding: 10px; font-size:1.2rem;"
+                onclick="toggleAdvanced()">⚙️ 點擊微調單字內容</button>
+            <textarea id="custom-words-input"></textarea>
+        </div>
+
+        <div class="action-area">
+            <button id="listen-toggle" class="btn pixel-border btn-red" style="font-size: 1.5rem; padding: 10px 30px;"
+                onclick="toggleListen()">🔊 聽力: 關</button>
+            <button class="btn pixel-border btn-green" onclick="startGame()">START!</button>
+            <div class="link-text" onclick="win()">測試破關效果</div>
+        </div>
+    </div>
+
+    <!-- GAME OVERLAYS / DIALOGS -->
+    <div id="game-ui" class="screen">
+        <div id="game-bg"></div>
+        <canvas id="game-canvas"></canvas>
+
+        <div id="hud-layer">
+            <div class="hud-top-row">
+                <div class="hud-left-panel">
+                    <div id="hud-exp">EXP: 0 / 200</div>
+                    <div id="hud-hearts">❤️❤️❤️❤️❤️</div>
+                </div>
+
+                <div class="hud-center-panel">
+                    <div class="hud-target-label">TARGET</div>
+                    <div id="hud-target-icon">❓</div>
+                    <div id="hud-target-word">LOADING</div>
+                </div>
+
+                <div class="hud-right-group">
+                    <button class="hud-btn hud-btn-exit" onclick="quitToMenu()">↲ EXIT</button>
+                    <button class="hud-btn hud-btn-pause" onclick="pauseGame()">⏸ PAUSE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="pause-menu" class="screen dialog-overlay">
+        <div class="dialog-box pixel-border">
+            <div class="dialog-title">PAUSED</div>
+            <button class="btn pixel-border btn-green" style="font-size: 2rem;" onclick="resumeGame()">RESUME</button>
+            <button class="btn pixel-border btn-gray" onclick="quitToMenu()">QUIT</button>
+        </div>
+    </div>
+
+    <div id="death-menu" class="screen dialog-overlay">
+        <div class="dialog-box pixel-border">
+            <div class="dialog-title" style="color:var(--btn-red);">GAME OVER</div>
+            <div style="font-size: 2rem;">EXP: <span id="final-score">0</span></div>
+            <button class="btn pixel-border btn-green" onclick="restartLevel()">TRY AGAIN</button>
+            <button class="btn pixel-border btn-gray" onclick="quitToMenu()">MAIN MENU</button>
+        </div>
+    </div>
+
+    <div id="victory-menu" class="screen dialog-overlay">
+        <div class="dialog-box pixel-border" style="background: rgba(100, 255, 100, 0.9);">
+            <div class="dialog-title">MISSION CLEAR!</div>
+            <div style="font-size: 1.5rem; background:#000; color:#FFF; padding:10px;">Target reached: 200 EXP!</div>
+            <button class="btn pixel-border btn-yellow" style="font-size: 2rem;" onclick="claimReward()">CLAIM
+                REWARD</button>
+            <button class="btn pixel-border btn-gray" onclick="quitToMenu()">MAIN MENU</button>
+        </div>
+    </div>
+
+    <div id="video-container">
+        <video id="victory-video" playsinline></video>
+    </div>
+
+    <script>
+        const $ = id => document.getElementById(id);
+        const $$ = selector => document.querySelectorAll(selector);
+        const rand = (min, max) => Math.random() * (max - min) + min;
+
+        // --- THEME & DICTIONARY SYSTEM ---
+        const dictionary = {
+            school: { "book": "📖", "pencil": "✏️", "desk": "🪑", "bag": "🎒", "clock": "⏰", "map": "🗺️" },
+            body: { "eye": "👁️", "ear": "👂", "nose": "👃", "mouth": "👄", "hand": "✋", "head": "👱" },
+            animals: { "dog": "🐶", "cat": "🐱", "bird": "🐦", "fish": "🐟", "pig": "🐷", "lion": "🦁" },
+            life: { "apple": "🍎", "banana": "🍌", "sun": "☀️", "moon": "🌙", "car": "🚗", "house": "🏠" }
+        };
+
+        let currentTheme = 'school';
+        let customWords = []; // if user types in advanced box
+        let isListeningMode = false;
+        let speedMult = 1.0;
+
+        // UI Interactions
+        $$('#theme-group .segment-btn').forEach(btn => {
+            btn.onclick = () => {
+                $$('#theme-group .segment-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                currentTheme = btn.dataset.val;
+                // auto-fill custom box for reference
+                $('custom-words-input').value = Object.keys(dictionary[currentTheme]).join(', ');
+            }
+        });
+
+        $$('#speed-group .segment-btn').forEach(btn => {
+            btn.onclick = () => {
+                $$('#speed-group .segment-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                speedMult = parseFloat(btn.dataset.val);
+            }
+        });
+
+        function toggleAdvanced() {
+            const box = $('custom-words-input');
+            box.style.display = box.style.display === 'block' ? 'none' : 'block';
+            if (box.style.display === 'block' && !box.value) {
+                box.value = Object.keys(dictionary[currentTheme]).join(', ');
+            }
+        }
+
+        function toggleListen() {
+            isListeningMode = !isListeningMode;
+            const btn = $('listen-toggle');
+            if (isListeningMode) {
+                btn.className = 'btn pixel-border btn-blue';
+                btn.innerText = '🔊 聽力: 開';
+            } else {
+                btn.className = 'btn pixel-border btn-red';
+                btn.innerText = '🔊 聽力: 關';
+            }
+        }
+
+        // --- GAME ENGINE ---
+        let canvas, ctx;
+        let gameState = 'menu';
+        let lastTime = 0;
+        let score = 0, lives = 5, targetScore = 200;
+
+        let wordsInPlay = [];
+        let arrows = [];
+        let particles = [];
+        let scale = 1;
+
+        const player = { logicalWidth: 50, logicalHeight: 90, x: 0, y: 0 };
+        let targetMouseX = 0;
+
+        // Audio
+        const synth = window.speechSynthesis;
+        function speakWord(word) {
+            if (synth.speaking) synth.cancel();
+            const u = new SpeechSynthesisUtterance(word);
+            u.lang = 'en-US'; u.rate = 0.85; synth.speak(u);
+        }
+
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSynth(type, freq, dropFreq, dur) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(dropFreq, audioCtx.currentTime + dur);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + dur);
+        }
+
+        function playHit() { playSynth('square', 440, 880, 0.1); }
+        function playShoot() { playSynth('triangle', 600, 100, 0.1); }
+
+        window.onload = () => {
+            canvas = $('game-canvas');
+            ctx = canvas.getContext('2d', { alpha: true });
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+            setupInputs();
+            $('custom-words-input').value = Object.keys(dictionary['school']).join(', ');
+        };
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            scale = Math.min(1.5, Math.max(0.5, canvas.width / 600));
+            player.y = canvas.height - (player.logicalHeight / 2 * scale) - 20; // 20px padding from bottom
+            if (player.x === 0) { player.x = canvas.width / 2; targetMouseX = player.x; }
+        }
+
+        function setupInputs() {
+            const updateMouse = (x) => { targetMouseX = Math.max(player.logicalWidth / 2 * scale, Math.min(canvas.width - player.logicalWidth / 2 * scale, x)); };
+            canvas.addEventListener('mousemove', e => { if (gameState === 'playing') updateMouse(e.clientX); });
+            canvas.addEventListener('mousedown', e => { if (gameState === 'playing') { updateMouse(e.clientX); shoot(); } });
+            canvas.addEventListener('touchmove', e => { if (gameState === 'playing') { e.preventDefault(); updateMouse(e.touches[0].clientX); } }, { passive: false });
+            canvas.addEventListener('touchstart', e => { if (gameState === 'playing') { e.preventDefault(); updateMouse(e.touches[0].clientX); shoot(); } }, { passive: false });
+        }
+
+        function showScreen(id) {
+            $$('.screen').forEach(el => el.classList.remove('active'));
+            if (id) $(id).classList.add('active');
+        }
+
+        function startGame() {
+            initAudio();
+            const cwInput = $('custom-words-input').value;
+            customWords = cwInput.split(',').map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
+            if (customWords.length === 0) customWords = Object.keys(dictionary[currentTheme]);
+
+            showScreen('game-ui');
+            restartLevel();
+        }
+
+        function restartLevel() {
+            score = 0; lives = 5; wordsInPlay = []; arrows = []; particles = [];
+            updateHUD();
+            gameState = 'playing';
+            showScreen('game-ui');
+            spawnWord();
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function pauseGame() { if (gameState === 'playing') { gameState = 'paused'; showScreen('pause-menu'); } }
+        function resumeGame() { if (gameState === 'paused') { gameState = 'playing'; showScreen('game-ui'); lastTime = performance.now(); requestAnimationFrame(gameLoop); } }
+        function quitToMenu() { gameState = 'menu'; showScreen('main-menu'); }
+
+        function shoot() {
+            if (gameState !== 'playing') return;
+            arrows.push({ x: player.x, y: player.y - (player.logicalHeight / 2 * scale), w: 6 * scale, h: 25 * scale, speed: canvas.height * 2.0 });
+            playShoot();
+        }
+
+        function getEmoji(word) {
+            if (dictionary[currentTheme] && dictionary[currentTheme][word]) return dictionary[currentTheme][word];
+            // search all themes
+            for (let t in dictionary) { if (dictionary[t][word]) return dictionary[t][word]; }
+            return "🎯"; // default
+        }
+
+        function spawnWord() {
+            if (gameState !== 'playing') return;
+            const word = customWords[Math.floor(Math.random() * customWords.length)];
+            const emoji = getEmoji(word);
+
+            const w = 80 * scale; const h = 90 * scale; // Taller to fit emoji + text
+            const x = rand(10, canvas.width - w - 10);
+
+            wordsInPlay.push({ x, y: -h * 2, w, h, word, emoji, speed: (canvas.height / 8) * speedMult });
+
+            // HUD Update
+            if (isListeningMode) {
+                $('hud-target-icon').innerText = '🔊';
+                $('hud-target-word').innerText = 'LISTEN!';
+                speakWord(word);
+            } else {
+                $('hud-target-icon').innerText = emoji;
+                $('hud-target-word').innerText = word;
+            }
+
+            const pnl = document.querySelector('.hud-center-panel');
+            pnl.style.transform = window.innerWidth <= 500 ? 'translateX(-50%) scale(1.1)' : 'translateX(-20%) scale(1.1)';
+            setTimeout(() => pnl.style.transform = window.innerWidth <= 500 ? 'translateX(-50%) scale(1)' : 'translateX(-20%) scale(1)', 150);
+        }
+
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 15; i++) particles.push({ x, y, vx: rand(-5, 5) * scale, vy: rand(-5, 5) * scale, life: 1, c: color, s: rand(5, 12) * scale });
+        }
+
+        function gameLoop(time) {
+            if (gameState !== 'playing') return;
+            const dt = Math.min((time - lastTime) / 1000, 0.1);
+            lastTime = time;
+            update(dt); draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update(dt) {
+            player.x += (targetMouseX - player.x) * (dt * 15);
+
+            // Arrows
+            for (let i = arrows.length - 1; i >= 0; i--) {
+                arrows[i].y -= arrows[i].speed * dt;
+                if (arrows[i].y < -50) arrows.splice(i, 1);
+            }
+
+            // Enemies
+            for (let i = wordsInPlay.length - 1; i >= 0; i--) {
+                const w = wordsInPlay[i];
+                w.y += w.speed * dt;
+
+                if (w.y > canvas.height) { // Miss
+                    wordsInPlay.splice(i, 1);
+                    lives--; updateHUD();
+                    createParticles(w.x + w.w / 2, w.y, 'red');
+                    if (lives <= 0) die();
+                    continue;
+                }
+
+                // Hit detection
+                for (let j = arrows.length - 1; j >= 0; j--) {
+                    const a = arrows[j];
+                    if (a.x > w.x - a.w / 2 && a.x < w.x + w.w + a.w / 2 && a.y > w.y && a.y < w.y + w.h) {
+                        playHit();
+                        if (!isListeningMode) speakWord(w.word); // Speak block word upon hit in normal mode
+                        createParticles(w.x + w.w / 2, w.y + w.h / 2, '#FFD700');
+
+                        score += 10;
+                        wordsInPlay.splice(i, 1); arrows.splice(j, 1);
+                        updateHUD();
+
+                        if (score >= targetScore) { win(); return; }
+                        break;
+                    }
+                }
+            }
+
+            // Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx; p.y += p.vy; p.vy += (20 * scale) * dt; // gravity
+                p.life -= dt * 1.5;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+
+            if (wordsInPlay.length === 0 || (wordsInPlay.length < 3 && Math.random() < 0.005)) spawnWord();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Target Blocks (White square + Black border)
+            wordsInPlay.forEach(w => {
+                ctx.fillStyle = '#FFF';
+                ctx.fillRect(w.x, w.y, w.w, w.h);
+                ctx.strokeStyle = '#000'; ctx.lineWidth = 4 * scale;
+                ctx.strokeRect(w.x, w.y, w.w, w.h);
+
+                // Draw Inner Shadow effect
+                ctx.strokeStyle = '#CCC'; ctx.lineWidth = 4 * scale;
+                ctx.beginPath(); ctx.moveTo(w.x + w.w, w.y); ctx.lineTo(w.x, w.y); ctx.lineTo(w.x, w.y + w.h); ctx.stroke();
+
+                // Draw Emoji
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                const hidden = isListeningMode ? '❓' : w.emoji;
+                ctx.font = `${Math.floor(40 * scale)}px Arial`; // emojis format better in standard fonts
+                ctx.fillText(hidden, w.x + w.w / 2, w.y + w.h / 2 - (10 * scale));
+
+                // Draw Text
+                const text = isListeningMode ? 'LISTEN' : w.word.toUpperCase();
+                ctx.fillStyle = '#000';
+                ctx.font = `bold ${Math.floor(14 * scale)}px "VT323", monospace`;
+                ctx.fillText(text, w.x + w.w / 2, w.y + w.h - (15 * scale));
+            });
+
+            // Draw Player Figure
+            const pw = player.logicalWidth * scale;
+            const ph = player.logicalHeight * scale;
+
+            // Body (Blue block)
+            ctx.fillStyle = '#1E90FF';
+            ctx.fillRect(player.x - pw / 2, player.y - ph / 2 + (ph * 0.3), pw, ph * 0.7);
+
+            // Head (Pink/Skin block)
+            ctx.fillStyle = '#FFC0CB';
+            const headSize = pw * 0.9;
+            ctx.fillRect(player.x - headSize / 2, player.y - ph / 2, headSize, headSize);
+
+            // Draw Bow (Arc)
+            ctx.strokeStyle = '#8B4513'; ctx.lineWidth = 4 * scale;
+            ctx.beginPath(); ctx.arc(player.x, player.y - ph / 2, pw * 0.6, Math.PI, 0); ctx.stroke();
+
+            // Draw Arrows
+            ctx.fillStyle = '#FFF'; ctx.strokeStyle = '#8B4513'; ctx.lineWidth = 2 * scale;
+            arrows.forEach(a => { ctx.fillRect(a.x - a.w / 2, a.y, a.w, a.h); ctx.strokeRect(a.x - a.w / 2, a.y, a.w, a.h); });
+
+            // Particles
+            particles.forEach(p => {
+                ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = p.c;
+                ctx.fillRect(p.x - p.s / 2, p.y - p.s / 2, p.s, p.s);
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function updateHUD() {
+            $('hud-exp').innerText = `EXP: ${score} / ${targetScore}`;
+            $('hud-hearts').innerText = '❤️'.repeat(Math.max(0, lives));
+            $('final-score').innerText = score;
+        }
+
+        function die() { gameState = 'dead'; showScreen('death-menu'); }
+        function win() {
+            gameState = 'victory'; showScreen('victory-menu');
+            playSynth('square', 600, 1200, 0.2); setTimeout(() => playSynth('square', 800, 1600, 0.4), 250);
+        }
+
+        async function claimReward() {
+            const vidUrl = $('video-url').value;
+            const container = $('video-container');
+            const video = $('victory-video');
+
+            showScreen(null); // Clear all UI
+
+            // Play evil laugh concurrently if available
+            if (window.AudioContext) {
+                // simulate laugh
+                let t = 0;
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => playSynth('sawtooth', 150 + rand(0, 50), 100, 0.2), t);
+                    t += 300 + rand(0, 100);
+                }
+            }
+
+            if (vidUrl) {
+                video.src = vidUrl; container.style.display = 'block';
+                video.onended = () => { container.style.display = 'none'; quitToMenu(); };
+                container.onclick = () => { video.pause(); container.style.display = 'none'; quitToMenu(); };
+                try { await video.play(); }
+                catch (e) { console.error(e); setTimeout(() => { container.style.display = 'none'; quitToMenu(); }, 2000); }
+            } else {
+                setTimeout(quitToMenu, 2000);
+            }
+        }
+    </script>
+</body>
+
+</html>

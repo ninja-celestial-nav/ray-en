@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Minecraft: Legendary Sharpshooter</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        :root {
+            --mc-gray-light: #C6C6C6;
+            --mc-gray-base: #8B8B8B;
+            --mc-gray-dark: #373737;
+            --mc-border-light: #FFFFFF;
+            --mc-border-dark: #555555;
+            --mc-gold: #FFAA00;
+            --mc-text: #E0E0E0;
+            --mc-text-shadow: 2px 2px 0 #3F3F3F;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Press Start 2P', monospace;
+            background-color: #5d4037;
+            /* Procedural dirt background */
+            background-image:
+                radial-gradient(#4e342e 10%, transparent 11%),
+                radial-gradient(#4e342e 10%, transparent 11%);
+            background-size: 32px 32px;
+            background-position: 0 0, 16px 16px;
+        }
+
+        /* UI Containers */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            pointer-events: none;
+            /* Let clicks pass through empty space */
+        }
+
+        .panel {
+            pointer-events: auto;
+            background: var(--mc-gray-light);
+            border: 4px solid var(--mc-gray-dark);
+            border-top-color: var(--mc-border-light);
+            border-left-color: var(--mc-border-light);
+            border-bottom-color: var(--mc-border-dark);
+            border-right-color: var(--mc-border-dark);
+            padding: 24px;
+            box-shadow: inset 4px 4px 0 rgba(255, 255, 255, 0.5), inset -4px -4px 0 rgba(0, 0, 0, 0.2), 0 10px 20px rgba(0, 0, 0, 0.5);
+            image-rendering: pixelated;
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+            text-align: center;
+            color: #333;
+        }
+
+        .panel h1,
+        .panel h2,
+        .panel h3 {
+            color: #fff;
+            text-shadow: 2px 2px 0 #333;
+            margin-top: 0;
+        }
+
+        /* Buttons */
+        .btn {
+            background: var(--mc-gray-base);
+            border: 4px solid var(--mc-border-dark);
+            border-top-color: var(--mc-border-light);
+            border-left-color: var(--mc-border-light);
+            color: white;
+            padding: 12px 24px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 1rem;
+            cursor: pointer;
+            text-shadow: 2px 2px 0 #000;
+            margin: 8px;
+            position: relative;
+            outline: none;
+            display: inline-block;
+            transition: transform 0.1s;
+        }
+
+        .btn:active {
+            border-bottom-color: var(--mc-border-light);
+            border-right-color: var(--mc-border-light);
+            border-top-color: var(--mc-border-dark);
+            border-left-color: var(--mc-border-dark);
+            transform: translateY(4px);
+            padding: 14px 22px 10px 26px;
+            /* Shift text visually */
+        }
+
+        /* Golden Enchanted Button */
+        .btn-enchanted {
+            background: linear-gradient(45deg, #FFD700 25%, #FFA500 50%, #FFD700 75%);
+            background-size: 200% 200%;
+            color: #ffff00;
+            text-shadow: 2px 2px 0 #553300;
+            border-top-color: #FFFF88;
+            border-left-color: #FFFF88;
+            border-bottom-color: #AA6600;
+            border-right-color: #AA6600;
+            animation: enchantGlow 2s infinite linear;
+            font-size: 1.2rem;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        @keyframes enchantGlow {
+            0% {
+                background-position: 0% 0%;
+                box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            }
+
+            50% {
+                background-position: 100% 100%;
+                box-shadow: 0 0 25px rgba(255, 215, 0, 1);
+            }
+
+            100% {
+                background-position: 0% 0%;
+                box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            }
+        }
+
+        .btn:hover {
+            filter: brightness(1.2);
+        }
+
+        /* Modules */
+        .module {
+            background: rgba(0, 0, 0, 0.1);
+            border: 2px solid #555;
+            padding: 16px;
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .module label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+        }
+
+        .module input,
+        .module select {
+            font-family: inherit;
+            padding: 8px;
+            width: 100%;
+            margin-bottom: 8px;
+            box-sizing: border-box;
+            background: #222;
+            color: #fff;
+            border: 2px solid #555;
+        }
+
+        .collapsible-content {
+            display: none;
+            margin-top: 10px;
+        }
+
+        /* Canvas */
+        #game-canvas {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* In-Game HUD */
+        #hud {
+            display: none;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            z-index: 5;
+            pointer-events: none;
+            color: white;
+            text-shadow: var(--mc-text-shadow);
+            font-size: 1.2rem;
+        }
+
+        #hearts {
+            color: #ff3333;
+        }
+
+        #score-display {
+            position: absolute;
+            top: 0;
+            right: 0;
+            color: var(--mc-gold);
+        }
+
+        #word-preview {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px;
+            border: 2px solid var(--mc-border-dark);
+            color: white;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        #pause-btn {
+            position: absolute;
+            top: auto;
+            bottom: 20px;
+            right: 20px;
+            z-index: 5;
+            pointer-events: auto;
+            font-size: 0.8rem;
+        }
+
+        /* Victory & Video */
+        #victory-screen {
+            background: center / cover no-repeat;
+        }
+
+        #video-container {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 20;
+            background: black;
+        }
+
+        #victory-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Specific screens */
+        .screen {
+            display: none;
+        }
+
+        .active {
+            display: flex;
+            /* UI Layer is flex */
+        }
+
+        /* Scrollbar style */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--mc-gray-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--mc-gray-light);
+            border: 2px solid var(--mc-gray-dark);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div id="hearts">❤️❤️❤️❤️❤️</div>
+        <div id="score-display">SCORE: 0 / 200</div>
+        <div id="word-preview">NEXT: -</div>
+    </div>
+    <button id="pause-btn" class="btn" style="display:none;">PAUSE</button>
+    <button id="test-win-btn" class="btn btn-enchanted" onclick="win()"
+        style="position: absolute; top: 10px; right: 10px; z-index: 50; padding: 8px; font-size: 0.8rem;">TEST
+        WIN</button>
+
+    <!-- Game Canvas -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- UI Overlay -->
+    <div id="ui-layer">
+
+        <!-- Main Menu -->
+        <div id="main-menu" class="panel screen active">
+            <h1>SHARPSHOOTER</h1>
+
+            <div class="module">
+                <h3>[PLAYER PROFILE]</h3>
+                <label>Avatar Name</label>
+                <input type="text" id="player-name" value="Steve">
+                <label>Victory Video URL</label>
+                <input type="text" id="video-url" value="./grok-video-a512f103-c25e-4b51-8fed-d091b5190ead.mp4"
+                    placeholder="https://myppt.cc/AA7m6">
+                <label>Victory Image URL</label>
+                <input type="text" id="image-url" value="./S__1104166915.jpg">
+            </div>
+
+            <div class="module">
+                <h3>[ADVENTURE SETTINGS]</h3>
+                <label>Difficulty</label>
+                <select id="difficulty">
+                    <option value="easy">Peaceful (Slow)</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="hard">Hardcore (Fast)</option>
+                </select>
+
+                <label style="margin-top:10px; display:flex; align-items:center; cursor:pointer;">
+                    <input type="checkbox" id="listening-mode" style="width:20px; height:20px; margin-right:10px;">
+                    Listening Mode (Hidden Target)
+                </label>
+            </div>
+
+            <div class="module">
+                <h3 style="cursor:pointer; color: var(--mc-gold);" onclick="toggleVocab()">[CUSTOMIZATION] ▼</h3>
+                <div id="vocab-list" class="collapsible-content">
+                    <label>Vocabulary Words (Comma separated)</label>
+                    <textarea id="vocab-input"
+                        style="width:100%; height:80px; font-family:inherit; background:#222; color:#fff; padding:8px;">apple,banana,orange,grape,diamond,creeper,zombie,skeleton,sword,pickaxe,arrow,bow,potion,enchantment,redstone,emerald,village,portal,dragon,wither</textarea>
+                </div>
+            </div>
+
+            <button class="btn btn-enchanted" onclick="startGame()">START ADVENTURE</button>
+        </div>
+
+        <!-- Pause Menu -->
+        <div id="pause-menu" class="panel screen">
+            <h2>GAME PAUSED</h2>
+            <button class="btn" style="display:block; width:100%; margin: 10px 0;"
+                onclick="resumeGame()">RESUME</button>
+            <button class="btn" style="display:block; width:100%; margin: 10px 0;" onclick="restartLevel()">RESTART
+                LEVEL</button>
+            <button class="btn" style="display:block; width:100%; margin: 10px 0;" onclick="quitToMenu()">QUIT TO
+                MENU</button>
+        </div>
+
+        <!-- Death Menu -->
+        <div id="death-menu" class="panel screen">
+            <h2 style="color: #ff5555;">YOU DIED!</h2>
+            <p>Score: <span id="final-score">0</span></p>
+            <button class="btn" onclick="restartLevel()">REPLAY</button>
+            <button class="btn" onclick="quitToMenu()">MAIN MENU</button>
+        </div>
+
+        <!-- Victory Confirm Menu -->
+        <div id="victory-menu" class="panel screen"
+            style="background-image: url('./S__1104166915.jpg'); background-size: cover; background-blend-mode: multiply; background-color: rgba(100,255,100,0.8);">
+            <h1 style="color: #55ff55;">[MISSION CLEAR]</h1>
+            <p style="color: #fff; background: rgba(0,0,0,0.5); padding: 10px;">Target reached: 200 pts!</p>
+            <button class="btn btn-enchanted" onclick="claimReward()">CLAIM REWARD</button>
+        </div>
+
+    </div>
+
+    <!-- Fullscreen Video Layer -->
+    <div id="video-container">
+        <video id="victory-video" playsinline></video>
+    </div>
+
+    <script>
+        // Utilities
+        const $ = id => document.getElementById(id);
+        const rand = (min, max) => Math.random() * (max - min) + min;
+
+        // UI State
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+            if (screenId) $(screenId).classList.add('active');
+            if (screenId) $('ui-layer').style.pointerEvents = 'auto';
+            else $('ui-layer').style.pointerEvents = 'none';
+        }
+
+        function toggleVocab() {
+            const list = $('vocab-list');
+            list.style.display = list.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // Game State Variables
+        let canvas, ctx;
+        let gameState = 'menu'; // menu, playing, paused, dead, victory
+        let animationId;
+        let lastTime = 0;
+        let score = 0;
+        let lives = 5;
+        let combo = 0;
+        let globalSpeedMult = 1;
+        let currentWords = [];
+        let particles = [];
+        let arrows = [];
+        let targetScore = 200;
+
+        let wordsList = [];
+        let difficultyMult = 1;
+        let isListeningMode = false;
+
+        // Player object
+        const player = {
+            x: 0,
+            y: 0,
+            width: 40,
+            height: 40,
+            color: '#00aaff',
+            img: null
+        };
+
+        let mouseX = 0;
+
+        // Speech Synthesis
+        const synth = window.speechSynthesis;
+        function speakWord(word) {
+            if (synth.speaking) synth.cancel();
+            const utterance = new SpeechSynthesisUtterance(word);
+            utterance.lang = 'en-US';
+            synth.speak(utterance);
+        }
+
+        // Audio Synthesis (Web Audio API)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playHitSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function playShootSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        async function playEvilLaugh() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            for (let i = 0; i < 6; i++) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                const baseFreq = 150 + Math.random() * 50;
+                osc.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(baseFreq - 50, audioCtx.currentTime + 0.2);
+
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.2);
+                await new Promise(r => setTimeout(r, 200 + Math.random() * 100));
+            }
+        }
+
+        // Initialize Canvas
+        window.onload = () => {
+            canvas = $('game-canvas');
+            ctx = canvas.getContext('2d');
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            // Generate simple Steve head
+            player.img = document.createElement('canvas');
+            player.img.width = 8; player.img.height = 8;
+            const pctx = player.img.getContext('2d');
+            pctx.fillStyle = '#C68B59'; pctx.fillRect(0, 0, 8, 8); // Skin
+            pctx.fillStyle = '#4A2A18'; pctx.fillRect(0, 0, 8, 2); // Hair
+            pctx.fillRect(0, 2, 2, 1); pctx.fillRect(6, 2, 2, 1);
+            pctx.fillStyle = '#FFFFFF'; pctx.fillRect(1, 3, 2, 1); pctx.fillRect(5, 3, 2, 1); // Eyes
+            pctx.fillStyle = '#2B386C'; pctx.fillRect(2, 3, 1, 1); pctx.fillRect(6, 3, 1, 1); // Pupils
+            pctx.fillStyle = '#815631'; pctx.fillRect(3, 5, 2, 1); // Nose
+            pctx.fillStyle = '#5A3825'; pctx.fillRect(2, 6, 4, 1); // Mouth
+
+            // Event Listeners for Game
+            canvas.addEventListener('mousemove', e => {
+                if (gameState !== 'playing') return;
+                const rect = canvas.getBoundingClientRect();
+                mouseX = e.clientX - rect.left;
+            });
+
+            canvas.addEventListener('touchmove', e => {
+                if (gameState !== 'playing') return;
+                const rect = canvas.getBoundingClientRect();
+                mouseX = e.touches[0].clientX - rect.left;
+            }, { passive: true });
+
+            canvas.addEventListener('mousedown', shoot);
+            canvas.addEventListener('touchstart', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                mouseX = e.touches[0].clientX - rect.left;
+                shoot();
+            }, { passive: true });
+
+            $('pause-btn').addEventListener('click', pauseGame);
+        };
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            player.y = canvas.height - 80;
+            if (player.x === 0) player.x = canvas.width / 2;
+        }
+
+        // Game Actions
+        function startGame() {
+            // Apply Settings
+            const diff = $('difficulty').value;
+            difficultyMult = diff === 'easy' ? 0.6 : (diff === 'hard' ? 1.5 : 1);
+            isListeningMode = $('listening-mode').checked;
+
+            wordsList = $('vocab-input').value.split(',').map(w => w.trim()).filter(w => w.length > 0);
+            if (wordsList.length === 0) wordsList = ['apple', 'gold', 'book'];
+
+            // Set Victory Image
+            const imgUrl = $('image-url').value || './S__1104166915.jpg';
+            $('victory-menu').style.backgroundImage = `url('${imgUrl}')`;
+
+            $('main-menu').classList.remove('active');
+            restartLevel();
+        }
+
+        function restartLevel() {
+            score = 0;
+            lives = 5;
+            combo = 0;
+            globalSpeedMult = 1;
+            currentWords = [];
+            particles = [];
+            arrows = [];
+            updateHUD();
+
+            canvas.style.display = 'block';
+            $('hud').style.display = 'block';
+            $('pause-btn').style.display = 'block';
+
+            showScreen(null);
+            gameState = 'playing';
+
+            spawnWord();
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function pauseGame() {
+            if (gameState === 'playing') {
+                gameState = 'paused';
+                showScreen('pause-menu');
+            }
+        }
+
+        function resumeGame() {
+            if (gameState === 'paused') {
+                gameState = 'playing';
+                showScreen(null);
+                lastTime = performance.now();
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        function quitToMenu() {
+            gameState = 'menu';
+            canvas.style.display = 'none';
+            $('hud').style.display = 'none';
+            $('pause-btn').style.display = 'none';
+            $('test-win-btn').style.display = 'none';
+            showScreen('main-menu');
+        }
+
+        function shoot() {
+            if (gameState !== 'playing') return;
+            arrows.push({
+                x: player.x,
+                y: player.y - 20,
+                width: 4,
+                height: 15,
+                speed: 10 + (window.innerHeight * 0.01)
+            });
+            playShootSound();
+        }
+
+        function spawnWord() {
+            if (gameState !== 'playing') return;
+
+            const wordText = wordsList[Math.floor(Math.random() * wordsList.length)];
+            const width = Math.max(60, wordText.length * 15);
+            const x = rand(50, canvas.width - width - 50);
+
+            currentWords.push({
+                x: x,
+                y: -50,
+                width: width,
+                height: 40,
+                word: wordText,
+                speed: (30 + rand(0, 30)) * difficultyMult * globalSpeedMult,
+                health: 1
+            });
+
+            if (isListeningMode) {
+                $('word-preview').innerText = `NEXT: 🔊`;
+                speakWord(wordText);
+            } else {
+                $('word-preview').innerText = `NEXT: ${wordText.toUpperCase()}`;
+            }
+        }
+
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 15; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: rand(-3, 3),
+                    vy: rand(-3, 3),
+                    life: 1,
+                    color: color,
+                    size: rand(4, 10)
+                });
+            }
+        }
+
+        // Main Loop
+        function gameLoop(time) {
+            if (gameState !== 'playing') return;
+
+            const dt = (time - lastTime) / 1000;
+            lastTime = time;
+
+            update(dt);
+            draw();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update(dt) {
+            // Player move
+            player.x += (mouseX - player.x) * 0.2; // Smooth follow
+
+            // Arrows move
+            for (let i = arrows.length - 1; i >= 0; i--) {
+                const a = arrows[i];
+                a.y -= a.speed;
+                if (a.y < -50) arrows.splice(i, 1);
+            }
+
+            // Words move & collision
+            for (let i = currentWords.length - 1; i >= 0; i--) {
+                const w = currentWords[i];
+                w.y += w.speed * dt;
+
+                // Bottom collision (Miss)
+                if (w.y > canvas.height) {
+                    currentWords.splice(i, 1);
+                    lives--;
+                    combo = 0;
+                    updateHUD();
+                    createParticles(w.x + w.width / 2, w.y, '#ff0000');
+                    if (lives <= 0) die();
+                    continue;
+                }
+
+                // Arrow collision
+                for (let j = arrows.length - 1; j >= 0; j--) {
+                    const a = arrows[j];
+                    if (a.x > w.x - a.width && a.x < w.x + w.width + a.width &&
+                        a.y > w.y && a.y < w.y + w.height) {
+
+                        // Hit!
+                        playHitSound();
+                        speakWord(w.word);
+                        createParticles(w.x + w.width / 2, w.y + w.height / 2, '#55ff55'); // XP orbs
+
+                        score += 10;
+                        combo++;
+
+                        if (combo % 3 === 0) {
+                            globalSpeedMult += 0.05; // Accel
+                        }
+
+                        currentWords.splice(i, 1);
+                        arrows.splice(j, 1);
+                        updateHUD();
+
+                        if (score >= targetScore) {
+                            win();
+                            return; // Stop updating
+                        }
+
+                        break;
+                    }
+                }
+            }
+
+            // Particles update
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.1; // gravity
+                p.life -= dt * 2;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+
+            // Spawn words logic
+            if (currentWords.length === 0 || (currentWords.length < 3 && Math.random() < 0.01)) {
+                spawnWord();
+            }
+        }
+
+        function draw() {
+            // FIX: Reset global alpha and filter to prevent transparency bugs
+            ctx.globalAlpha = 1;
+            ctx.filter = 'none';
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw player (Steve head)
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(player.img, player.x - player.width / 2, player.y - player.height / 2, player.width, player.height);
+
+            // Draw Arrows
+            ctx.fillStyle = '#E0E0E0';
+            arrows.forEach(a => {
+                ctx.fillRect(a.x - a.width / 2, a.y, a.width, a.height);
+            });
+
+            // Draw Words (Dirt blocks with text)
+            currentWords.forEach(w => {
+                // Block background
+                ctx.fillStyle = '#6D4C41';
+                ctx.fillRect(w.x, w.y, w.width, w.height);
+                // Top grass edge
+                ctx.fillStyle = '#4CAF50';
+                ctx.fillRect(w.x, w.y, w.width, 8);
+                // Border
+                ctx.strokeStyle = '#3E2723';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(w.x, w.y, w.width, w.height);
+
+                // Text
+                ctx.fillStyle = '#FFF';
+                ctx.font = '14px "Press Start 2P"';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                // Simple outline
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 3;
+                ctx.strokeText(w.word, w.x + w.width / 2, w.y + w.height / 2 + 4);
+                ctx.fillText(w.word, w.x + w.width / 2, w.y + w.height / 2 + 4);
+            });
+
+            // Draw Particles
+            particles.forEach(p => {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function updateHUD() {
+            $('hearts').innerText = '❤️'.repeat(Math.max(0, lives));
+            $('score-display').innerText = `SCORE: ${score} / ${targetScore}`;
+        }
+
+        function die() {
+            gameState = 'dead';
+            $('final-score').innerText = score;
+            $('pause-btn').style.display = 'none';
+            $('test-win-btn').style.display = 'none';
+            showScreen('death-menu');
+        }
+
+        function win() {
+            gameState = 'victory';
+            showScreen('victory-menu');
+            $('pause-btn').style.display = 'none';
+            $('test-win-btn').style.display = 'none';
+            $('hud').style.display = 'none';
+            canvas.style.display = 'none';
+
+            playHitSound();
+            setTimeout(playHitSound, 200);
+            setTimeout(playHitSound, 400);
+        }
+
+        // Async video play to block AbortError perfectly
+        async function claimReward() {
+            const videoUrl = $('video-url').value || 'https://myppt.cc/AA7m6';
+            const vidContainer = $('video-container');
+            const video = $('victory-video');
+
+            video.src = videoUrl;
+            vidContainer.style.display = 'block';
+            showScreen(null); // hide ui layer
+
+            try {
+                playEvilLaugh(); // Concurrent audio
+                await video.play();
+
+                // Allow clicking to exit video
+                vidContainer.onclick = () => {
+                    video.pause();
+                    vidContainer.style.display = 'none';
+                    quitToMenu();
+                };
+
+                video.onended = () => {
+                    vidContainer.style.display = 'none';
+                    quitToMenu();
+                };
+
+            } catch (err) {
+                console.error("Video playback failed:", err);
+                alert("Failed to play video. Returning to menu.");
+                vidContainer.style.display = 'none';
+                quitToMenu();
+            }
+        }
+    </script>
+</body>
+
+</html>
