@@ -494,8 +494,16 @@
                 <div class="profile-info">
                     <div class="profile-name">Welcome RAY!</div>
                     <div class="profile-btn-group">
-                        <button class="btn pixel-border btn-yellow" onclick="alert('Camera intent')">📷 自拍</button>
-                        <button class="btn pixel-border btn-yellow" onclick="alert('Video intent')">📁 影片</button>
+                        <input type="file" id="camera-input" accept="image/*" capture="user" style="display: none;"
+                            onchange="handleImageUpload(event)">
+                        <button class="btn pixel-border btn-yellow"
+                            onclick="document.getElementById('camera-input').click()">📷 自拍</button>
+
+                        <input type="file" id="video-input" accept="video/*" style="display: none;"
+                            onchange="handleVideoUpload(event)">
+                        <button class="btn pixel-border btn-yellow"
+                            onclick="document.getElementById('video-input').click()">📁 影片</button>
+
                         <button class="btn pixel-border btn-blue" onclick="alert('PWA install intent')">⬇️ 加入桌面</button>
                     </div>
                 </div>
@@ -612,6 +620,39 @@
         let customWords = []; // if user types in advanced box
         let isListeningMode = false;
         let speedMult = 1.0;
+
+        // --- FILE UPLOAD HANDLERS ---
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const avatarBox = document.querySelector('.avatar-box');
+                    avatarBox.style.backgroundImage = `url(${e.target.result})`;
+                    avatarBox.style.backgroundSize = 'cover';
+                    avatarBox.style.backgroundPosition = 'center';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function handleVideoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const videoUrl = URL.createObjectURL(file);
+                document.getElementById('video-url').value = videoUrl;
+
+                // Show a quick confirmation
+                const btn = event.target.nextElementSibling;
+                const originalText = btn.innerText;
+                btn.innerText = '✅ 已載入';
+                btn.classList.replace('btn-yellow', 'btn-green');
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.replace('btn-green', 'btn-yellow');
+                }, 2000);
+            }
+        }
 
         // UI Interactions
         $$('#theme-group .segment-btn').forEach(btn => {
