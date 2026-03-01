@@ -549,6 +549,8 @@
             <button id="listen-toggle" class="btn pixel-border btn-red" style="font-size: 1.5rem; padding: 10px 30px;"
                 onclick="toggleListen()">🔊 聽力: 關</button>
             <button class="btn pixel-border btn-green" onclick="startGame()">START!</button>
+            <button class="btn pixel-border btn-yellow" style="font-size:1.5rem; padding: 10px 30px;"
+                onclick="window.location.href='memory.html'">🧠 記憶碰碰樂</button>
             <div class="link-text" onclick="win()">測試破關效果</div>
         </div>
     </div>
@@ -653,6 +655,24 @@
             if (file) {
                 const videoUrl = URL.createObjectURL(file);
                 document.getElementById('video-url').value = videoUrl;
+
+                // Save to IndexedDB so memory.html can read the exact File
+                let request = indexedDB.open('MinecraftGameDB', 1);
+                request.onupgradeneeded = function (e) {
+                    let db = e.target.result;
+                    if (!db.objectStoreNames.contains('settings')) {
+                        db.createObjectStore('settings');
+                    }
+                };
+                request.onsuccess = function (e) {
+                    let db = e.target.result;
+                    try {
+                        let tx = db.transaction('settings', 'readwrite');
+                        tx.objectStore('settings').put(file, 'victoryVideoFile');
+                    } catch (err) {
+                        console.error('Failed to save video to IndexedDB:', err);
+                    }
+                };
 
                 // Show a quick confirmation
                 const btn = event.target.nextElementSibling;
