@@ -456,12 +456,43 @@
         <div class="menu-panel pixel-border">
             <div class="panel-header">GAME SETTINGS</div>
 
+            <div class="section-title">[ 遊戲模式 GAME MODE ]</div>
+            <div class="segment-group" id="mode-group" style="margin-bottom: 15px;">
+                <div class="segment-btn selected" data-val="1p">1 PLAYER (計時)</div>
+                <div class="segment-btn" data-val="2p">2 PLAYERS (對戰)</div>
+            </div>
+
             <div class="section-title">[ 選擇主題 THEME ]</div>
             <div class="segment-group" id="theme-group">
                 <div class="segment-btn selected" data-val="school">SCHOOL</div>
                 <div class="segment-btn" data-val="body">BODY</div>
                 <div class="segment-btn" data-val="animals">ANIMALS</div>
                 <div class="segment-btn" data-val="life">LIFE</div>
+                <div class="segment-btn" data-val="mixed" style="background:var(--btn-yellow);">ALL MIXED (綜合)</div>
+            </div>
+
+            <div class="section-title" style="margin-top: 5px;">[ 選擇難度 DIFFICULTY ]</div>
+            <div class="segment-group" id="difficulty-group">
+                <div class="segment-btn selected" data-val="easy">EASY (簡單)</div>
+                <div class="segment-btn" data-val="normal">NORMAL (普通)</div>
+                <div class="segment-btn" data-val="hard">HARD (困難)</div>
+            </div>
+
+            <div style="text-align: center; margin-top: 10px;">
+                <button class="btn pixel-border btn-gray" onclick="toggleCustomWords()"
+                    style="font-size: 1rem; padding: 4px 8px;">+ 自訂單字 (Custom Words)</button>
+                <div id="custom-words-panel"
+                    style="display: none; margin-top: 10px; background: #222; padding: 10px; border: 2px solid #555; text-align: left;">
+                    <div style="color: #FFF; font-size: 0.9rem; margin-bottom: 5px;">輸入單字與圖案 (格式: 單字,圖案)
+                        每一行一組，將會加到當前選擇的主題:</div>
+                    <textarea id="custom-words-input"
+                        style="width: 100%; height: 80px; font-family: 'VT323'; font-size: 1.2rem; background: #000; color: #FFF; border: 2px solid var(--panel-inner-dark); padding: 5px; box-sizing: border-box;"
+                        placeholder="apple,🍎&#10;banana,🍌"></textarea>
+                    <button class="btn pixel-border btn-yellow" onclick="saveCustomWords()"
+                        style="font-size: 1rem; padding: 4px 8px; margin-top: 5px;">儲存單字</button>
+                    <span id="custom-words-msg"
+                        style="color: #4ade80; display: none; font-size: 1rem; margin-left: 10px;">已成功加入！</span>
+                </div>
             </div>
 
             <div class="section-title">[ 卡牌數量 CARDS ]</div>
@@ -469,16 +500,29 @@
                 <div class="segment-btn" data-val="12">12 張</div>
                 <div class="segment-btn selected" data-val="16">16 張</div>
                 <div class="segment-btn" data-val="20">20 張</div>
+                <div class="segment-btn" data-val="24">24 張</div>
+                <div class="segment-btn" data-val="30">30 張</div>
             </div>
-            <div style="text-align: center; margin-top:10px; font-size: 1.1rem; color: #555; margin-bottom: 15px;">(匹配
-                單字 與 圖案)</div>
+            <div style="text-align: center; margin-top:10px; font-size: 1.1rem; color: #555; margin-bottom: 5px;">
+                (匹配單字與圖案)</div>
+
+            <div class="section-title" style="margin-top: 5px;">[ 其他選項 OPTIONS ]</div>
+            <div style="text-align: center; margin-bottom: 15px;">
+                <label style="color: #FFF; font-size: 1.2rem; cursor: pointer;">
+                    <input type="checkbox" id="no-repeat-toggle" checked
+                        style="transform: scale(1.5); margin-right: 10px; vertical-align: middle;">
+                    優先出現沒學過的單字 (不重複模式)
+                </label>
+            </div>
 
             <div class="section-title">[ 最佳紀錄 BEST RECORDS ]</div>
             <div
                 style="text-align: center; font-size: 1.4rem; background: #222; color: #FFF; padding: 10px; border: 4px solid var(--panel-inner-dark); margin-bottom: 10px;">
-                12張: <span id="best-12" style="color: var(--text-gold);">--.--</span> s <br>
+                12張: <span id="best-12" style="color: var(--text-gold);">--.--</span> s |
                 16張: <span id="best-16" style="color: var(--text-gold);">--.--</span> s <br>
-                20張: <span id="best-20" style="color: var(--text-gold);">--.--</span> s
+                20張: <span id="best-20" style="color: var(--text-gold);">--.--</span> s |
+                24張: <span id="best-24" style="color: var(--text-gold);">--.--</span> s <br>
+                30張: <span id="best-30" style="color: var(--text-gold);">--.--</span> s
             </div>
         </div>
 
@@ -499,19 +543,29 @@
         <div id="hud-layer">
             <div class="hud-top-row">
                 <div class="hud-left-panel">
-                    <div id="hud-matches">MATCHES: 0 / 8</div>
-                    <div id="hud-attempts">ATTEMPTS: 0</div>
+                    <!-- 1P Mode Stats -->
+                    <div id="hud-matches" class="hud-1p-only">MATCHES: 0 / 8</div>
+                    <div id="hud-attempts" class="hud-1p-only">ATTEMPTS: 0</div>
+                    <!-- 2P Mode Stats -->
+                    <div id="hud-p1-score" class="hud-2p-only" style="display: none; color: #4ade80;">P1 SCORE: 0</div>
                 </div>
 
                 <div class="hud-center-panel">
-                    <div class="hud-title">MEMORY</div>
-                    <div id="hud-timer"
+                    <div class="hud-title" id="hud-main-title">MEMORY</div>
+                    <div id="hud-timer" class="hud-1p-only"
                         style="font-size: 1.5rem; color: #FFF; background: #000; padding: 2px 10px; margin-top: 5px; border: 2px solid #555;">
                         00.00 s</div>
+                    <div id="hud-turn-indicator" class="hud-2p-only"
+                        style="display: none; font-size: 1.5rem; color: #FFF; background: #000; padding: 2px 10px; margin-top: 5px; border: 2px solid #555; text-shadow: 1px 1px 0 #000;">
+                        P1 TURN</div>
                 </div>
 
                 <div class="hud-right-group">
                     <button class="hud-btn hud-btn-exit" onclick="quitToMenu()">↲ EXIT</button>
+                    <!-- 2P Mode Stats Right Side -->
+                    <div id="hud-p2-score" class="hud-2p-only"
+                        style="display: none; color: #f87171; font-size: 1.4rem; padding: 5px; background: rgba(0,0,0,0.5);">
+                        P2 SCORE: 0</div>
                 </div>
             </div>
         </div>
@@ -524,11 +578,11 @@
     <!-- VICTORY MENU -->
     <div id="victory-menu" class="screen dialog-overlay">
         <div class="dialog-box pixel-border" style="background: rgba(100, 255, 100, 0.9);">
-            <div class="dialog-title">ALL MATCHED!</div>
+            <div class="dialog-title" id="victory-title">ALL MATCHED!</div>
             <div id="new-record-msg"
                 style="display: none; color: #FF0000; font-size: 2rem; font-weight: bold; text-shadow: 2px 2px 0 #FFF; margin: -10px 0;">
                 🎉 NEW RECORD! 🎉</div>
-            <div style="font-size: 1.5rem; background:#000; color:#FFF; padding:10px;">
+            <div id="victory-stats" style="font-size: 1.5rem; background:#000; color:#FFF; padding:10px;">
                 Time: <span id="final-time" style="color:var(--text-gold);">00.00</span> s<br>
                 Attempts: <span id="final-attempts" style="color:var(--text-gold);">0</span>
             </div>
@@ -546,35 +600,122 @@
         const $ = id => document.getElementById(id);
         const $$ = selector => document.querySelectorAll(selector);
 
-        // Dictionary
+        // Dictionary (4 Themes x 3 Difficulties x 30 words)
         const dictionary = {
-            school: { "book": "📖", "pencil": "✏️", "desk": "🪑", "bag": "🎒", "clock": "⏰", "map": "🗺️" },
-            body: { "eye": "👁️", "ear": "👂", "nose": "👃", "mouth": "👄", "hand": "✋", "head": "👱" },
-            animals: { "dog": "🐶", "cat": "🐱", "bird": "🐦", "fish": "🐟", "pig": "🐷", "lion": "🦁" },
-            life: { "apple": "🍎", "banana": "🍌", "sun": "☀️", "moon": "🌙", "car": "🚗", "house": "🏠" }
+            school: {
+                easy: { "book": "📖", "pen": "🖊️", "pencil": "✏️", "desk": "🪑", "bag": "🎒", "clock": "⏰", "map": "🗺️", "ruler": "📏", "eraser": "🧽", "bus": "🚌", "bell": "🔔", "paper": "📄", "student": "🧑‍🎓", "teacher": "🧑‍🏫", "glue": "🧪", "art": "🎨", "music": "🎵", "sport": "⚽", "math": "➕", "read": "📖", "write": "✍️", "draw": "🖍️", "board": "📋", "chair": "🪑", "clip": "📎", "tape": "📼", "test": "💯", "grade": "A", "page": "📄", "note": "📓" },
+                normal: { "backpack": "🎒", "calculator": "🖩", "compass": "🧭", "globe": "🌍", "library": "📚", "projector": "📽️", "chalk": "🖊️", "notebook": "📓", "homework": "📝", "textbook": "📚", "dictionary": "📕", "uniform": "👕", "classroom": "🏫", "cafeteria": "🍱", "playground": "🏃", "principal": "👨‍💼", "recess": "🔔", "science": "🔬", "history": "🏛️", "geography": "🗺️", "biology": "🦠", "chemistry": "🧪", "physics": "🔭", "literature": "📖", "grammar": "✍️", "exam": "💯", "quiz": "❓", "lesson": "👩‍🏫", "semester": "📅", "diploma": "📜" },
+                hard: { "microscope": "🔬", "telescope": "🔭", "protractor": "📐", "encyclopedia": "📚", "laboratory": "🧪", "auditorium": "🎭", "gymnasium": "🏟️", "curriculum": "📋", "syllabus": "📄", "assignment": "📝", "thesis": "🎓", "graduation": "🎓", "scholarship": "💰", "tuition": "💵", "detention": "⌛", "attendance": "✅", "kindergarten": "🧸", "elementary": "🏫", "university": "🎓", "professor": "👨‍🏫", "campus": "🏛️", "dormitory": "🛏️", "fraternity": "🍻", "sorority": "🎀", "alumni": "🎓", "valedictorian": "🥇", "academic": "📚", "scholastic": "📝", "intellectual": "🧠", "education": "🎒" }
+            },
+            body: {
+                easy: { "eye": "👁️", "ear": "👂", "nose": "👃", "mouth": "👄", "hand": "✋", "head": "👱", "arm": "💪", "leg": "🦵", "foot": "🦶", "hair": "💇", "tooth": "🦷", "lip": "💋", "face": "👦", "knee": "🧎", "neck": "🧣", "back": "🔙", "chest": "👕", "stomach": "🤰", "finger": "👆", "toe": "🦶", "nail": "💅", "bone": "🦴", "blood": "🩸", "heart": "❤️", "brain": "🧠", "skin": "🧴", "tear": "💧", "sweat": "💦", "tongue": "👅", "thumb": "👍" },
+                normal: { "shoulder": "💪", "elbow": "💪", "wrist": "💪", "ankle": "🦶", "heel": "👠", "forehead": "🤦", "cheek": "😊", "chin": "🧔", "beard": "🧔", "mustache": "🥸", "eyebrow": "🤨", "eyelash": "👁️", "throat": "🗣️", "lung": "🫁", "liver": "🥩", "waist": "👖", "hip": "💃", "thigh": "🦵", "calf": "🦵", "muscle": "💪", "skeleton": "💀", "skull": "☠️", "vein": "🩸", "pulse": "💓", "breath": "😮‍💨", "voice": "🗣️", "sight": "👁️", "hearing": "👂", "smell": "👃", "taste": "👅" },
+                hard: { "abdomen": "🤰", "intestine": "🍝", "kidney": "🫘", "stomachache": "🤒", "headache": "🤕", "toothache": "🦷", "medicine": "💊", "hospital": "🏥", "doctor": "👨‍⚕️", "nurse": "👩‍⚕️", "patient": "🛌", "surgery": "🔪", "pharmacy": "🏪", "ambulance": "🚑", "wheelchair": "🦽", "crutch": "🩼", "bandage": "🩹", "thermometer": "🌡️", "stethoscope": "🩺", "syringe": "💉", "virus": "🦠", "bacteria": "🦠", "infection": "🤒", "fever": "🤒", "cough": "🤧", "sneeze": "🤧", "allergy": "🤧", "asthma": "😮‍💨", "cancer": "🦀", "disease": "🤒" }
+            },
+            animals: {
+                easy: { "dog": "🐶", "cat": "🐱", "bird": "🐦", "fish": "🐟", "pig": "🐷", "cow": "🐮", "horse": "🐴", "sheep": "🐑", "duck": "🦆", "chicken": "🐔", "mouse": "🐭", "bear": "🐻", "lion": "🦁", "tiger": "🐯", "monkey": "🐒", "elephant": "🐘", "frog": "🐸", "snake": "🐍", "bug": "🐛", "bee": "🐝", "ant": "🐜", "spider": "🕷️", "rabbit": "🐰", "fox": "🦊", "wolf": "🐺", "deer": "🦌", "bat": "🦇", "owl": "🦉", "shark": "🦈", "whale": "🐳" },
+                normal: { "penguin": "🐧", "dolphin": "🐬", "turtle": "🐢", "crocodile": "🐊", "hippo": "🦛", "rhino": "🦏", "giraffe": "🦒", "zebra": "🦓", "camel": "🐪", "kangaroo": "🦘", "koala": "🐨", "panda": "🐼", "sloth": "🦥", "otter": "🦦", "beaver": "🦫", "skunk": "🦨", "raccoon": "🦝", "badger": "🦡", "hedgehog": "🦔", "squirrel": "🐿️", "swan": "🦢", "flamingo": "🦩", "peacock": "🦚", "parrot": "🦜", "eagle": "🦅", "octopus": "🐙", "squid": "🦑", "crab": "🦀", "lobster": "🦞", "shrimp": "🦐" },
+                hard: { "chameleon": "🦎", "iguana": "🦎", "dinosaur": "🦖", "t-rex": "🦖", "pterodactyl": "🦕", "mammoth": "🦣", "sabre-tooth": "🐅", "gorilla": "🦍", "orangutan": "🦧", "chimpanzee": "🐒", "baboon": "🐒", "lemur": "🐵", "meerkat": "🦦", "mongoose": "🦦", "walrus": "🦭", "seal": "🦭", "manatee": "🐄", "platypus": "🦆", "echidna": "🦔", "wombat": "🐻", "tasmanian": "😈", "dingo": "🐕", "hyena": "🐕", "jackal": "🐕", "coyote": "🐺", "cheetah": "🐆", "leopard": "🐆", "jaguar": "🐆", "panther": "🐆", "puma": "🐆" }
+            },
+            life: {
+                easy: { "apple": "🍎", "banana": "🍌", "sun": "☀️", "moon": "🌙", "car": "🚗", "house": "🏠", "tree": "🌳", "flower": "🌸", "water": "💧", "fire": "🔥", "star": "⭐", "cloud": "☁️", "rain": "🌧️", "snow": "❄️", "wind": "🌬️", "sky": "🌌", "earth": "🌍", "sea": "🌊", "mountain": "⛰️", "city": "🏙️", "road": "🛣️", "door": "🚪", "window": "🪟", "bed": "🛏️", "table": "🪑", "chair": "🪑", "phone": "📱", "money": "💰", "clock": "⏰", "key": "🔑" },
+                normal: { "orange": "🍊", "grape": "🍇", "watermelon": "🍉", "strawberry": "🍓", "pizza": "🍕", "burger": "🍔", "cake": "🍰", "icecream": "🍨", "bread": "🍞", "cheese": "🧀", "egg": "🥚", "milk": "🥛", "coffee": "☕", "tea": "🍵", "juice": "🧃", "wine": "🍷", "beer": "🍺", "knife": "🔪", "fork": "🍴", "spoon": "🥄", "plate": "🍽️", "bowl": "🥣", "cup": "☕", "glass": "🥛", "bottle": "🍾", "pot": "🍲", "pan": "🍳", "stove": "🔥", "oven": "🔥", "fridge": "🧊" },
+                hard: { "broccoli": "🥦", "cucumber": "🥒", "lettuce": "🥬", "mushroom": "🍄", "onion": "🧅", "garlic": "🧄", "potato": "🥔", "carrot": "🥕", "tomato": "🍅", "corn": "🌽", "avocado": "🥑", "coconut": "🥥", "pineapple": "🍍", "mango": "🥭", "peach": "🍑", "cherry": "🍒", "kiwi": "🥝", "lemon": "🍋", "melon": "🍈", "peanut": "🥜", "chestnut": "🌰", "bacon": "🥓", "steak": "🥩", "sausage": "🌭", "hotdog": "🌭", "sandwich": "🥪", "taco": "🌮", "burrito": "🌯", "popcorn": "🍿", "cookie": "🍪" }
+            }
+        };
+
+        const zhDict = {
+            "book": "書本", "pen": "原子筆", "pencil": "鉛筆", "desk": "書桌", "bag": "書包", "clock": "時鐘", "map": "地圖", "ruler": "尺", "eraser": "橡皮擦", "bus": "公車", "bell": "鐘聲", "paper": "紙", "student": "學生", "teacher": "老師", "glue": "膠水", "art": "美術", "music": "音樂", "sport": "體育", "math": "數學", "read": "閱讀", "write": "寫字", "draw": "畫圖", "board": "白板", "chair": "椅子", "clip": "迴紋針", "tape": "膠帶", "test": "測驗", "grade": "成績", "page": "頁碼", "note": "筆記",
+            "backpack": "背包", "calculator": "計算機", "compass": "指南針", "globe": "地球儀", "library": "圖書館", "projector": "投影機", "chalk": "粉筆", "notebook": "筆記本", "homework": "回家作業", "textbook": "教科書", "dictionary": "字典", "uniform": "制服", "classroom": "教室", "cafeteria": "自助餐廳", "playground": "遊樂場", "principal": "校長", "recess": "下課時間", "science": "科學", "history": "歷史", "geography": "地理", "biology": "生物", "chemistry": "化學", "physics": "物理", "literature": "文學", "grammar": "文法", "exam": "考試", "quiz": "小考", "lesson": "課程", "semester": "學期", "diploma": "文憑",
+            "microscope": "顯微鏡", "telescope": "望遠鏡", "protractor": "量角器", "encyclopedia": "百科全書", "laboratory": "實驗室", "auditorium": "禮堂", "gymnasium": "體育館", "curriculum": "課程表", "syllabus": "教學大綱", "assignment": "作業", "thesis": "論文", "graduation": "畢業", "scholarship": "獎學金", "tuition": "學費", "detention": "留校察看", "attendance": "出席", "kindergarten": "幼稚園", "elementary": "小學", "university": "大學", "professor": "教授", "campus": "校園", "dormitory": "宿舍", "fraternity": "兄弟會", "sorority": "姐妹會", "alumni": "校友", "valedictorian": "畢業生代表", "academic": "學術的", "scholastic": "學校的", "intellectual": "知識的", "education": "教育",
+            "eye": "眼睛", "ear": "耳朵", "nose": "鼻子", "mouth": "嘴巴", "hand": "手", "head": "頭", "arm": "手臂", "leg": "腿", "foot": "腳", "hair": "頭髮", "tooth": "牙齒", "lip": "嘴唇", "face": "臉", "knee": "膝蓋", "neck": "脖子", "back": "背部", "chest": "胸部", "stomach": "胃", "finger": "手指", "toe": "腳趾", "nail": "指甲", "bone": "骨頭", "blood": "血液", "heart": "心臟", "brain": "大腦", "skin": "皮膚", "tear": "眼淚", "sweat": "汗水", "tongue": "舌頭", "thumb": "大拇指",
+            "shoulder": "肩膀", "elbow": "手肘", "wrist": "手腕", "ankle": "腳踝", "heel": "腳跟", "forehead": "額頭", "cheek": "臉頰", "chin": "下巴", "beard": "落腮鬍", "mustache": "八字鬍", "eyebrow": "眉毛", "eyelash": "睫毛", "throat": "喉嚨", "lung": "肺", "liver": "肝臟", "waist": "腰", "hip": "臀部", "thigh": "大腿", "calf": "小腿", "muscle": "肌肉", "skeleton": "骨骼", "skull": "頭骨", "vein": "靜脈", "pulse": "脈搏", "breath": "呼吸", "voice": "聲音", "sight": "視覺", "hearing": "聽覺", "smell": "嗅覺", "taste": "味覺",
+            "abdomen": "腹部", "intestine": "腸子", "kidney": "腎臟", "stomachache": "胃痛", "headache": "頭痛", "toothache": "牙痛", "medicine": "藥物", "hospital": "醫院", "doctor": "醫生", "nurse": "護士", "patient": "病人", "surgery": "外科手術", "pharmacy": "藥局", "ambulance": "救護車", "wheelchair": "輪椅", "crutch": "拐杖", "bandage": "繃帶", "thermometer": "溫度計", "stethoscope": "聽診器", "syringe": "注射器", "virus": "病毒", "bacteria": "細菌", "infection": "感染", "fever": "發燒", "cough": "咳嗽", "sneeze": "打噴嚏", "allergy": "過敏", "asthma": "氣喘", "cancer": "癌症", "disease": "疾病",
+            "dog": "狗", "cat": "貓", "bird": "鳥", "fish": "魚", "pig": "豬", "cow": "牛", "horse": "馬", "sheep": "羊", "duck": "鴨", "chicken": "雞", "mouse": "老鼠", "bear": "熊", "lion": "獅子", "tiger": "老虎", "monkey": "猴子", "elephant": "大象", "frog": "青蛙", "snake": "蛇", "bug": "蟲", "bee": "蜜蜂", "ant": "螞蟻", "spider": "蜘蛛", "rabbit": "兔子", "fox": "狐狸", "wolf": "狼", "deer": "鹿", "bat": "蝙蝠", "owl": "貓頭鷹", "shark": "鯊魚", "whale": "鯨魚",
+            "penguin": "企鵝", "dolphin": "海豚", "turtle": "烏龜", "crocodile": "鱷魚", "hippo": "河馬", "rhino": "犀牛", "giraffe": "長頸鹿", "zebra": "斑馬", "camel": "駱駝", "kangaroo": "袋鼠", "koala": "無尾熊", "panda": "熊貓", "sloth": "樹懶", "otter": "水獺", "beaver": "海狸", "skunk": "臭鼬", "raccoon": "浣熊", "badger": "獾", "hedgehog": "刺蝟", "squirrel": "松鼠", "swan": "天鵝", "flamingo": "紅鶴", "peacock": "孔雀", "parrot": "鸚鵡", "eagle": "老鷹", "octopus": "章魚", "squid": "烏賊", "crab": "螃蟹", "lobster": "龍蝦", "shrimp": "蝦",
+            "chameleon": "變色龍", "iguana": "鬣蜥", "dinosaur": "恐龍", "t-rex": "暴龍", "pterodactyl": "翼手龍", "mammoth": "猛瑪象", "sabre-tooth": "劍齒虎", "gorilla": "大猩猩", "orangutan": "紅毛猩猩", "chimpanzee": "黑猩猩", "baboon": "狒狒", "lemur": "狐猴", "meerkat": "狐獴", "mongoose": "獴", "walrus": "海象", "seal": "海豹", "manatee": "海牛", "platypus": "鴨嘴獸", "echidna": "針鼴", "wombat": "袋熊", "tasmanian": "袋獾", "dingo": "澳洲野犬", "hyena": "鬣狗", "jackal": "胡狼", "coyote": "郊狼", "cheetah": "獵豹", "leopard": "豹", "jaguar": "美洲豹", "panther": "黑豹", "puma": "美洲獅",
+            "apple": "蘋果", "banana": "香蕉", "sun": "太陽", "moon": "月亮", "car": "汽車", "house": "房子", "tree": "樹", "flower": "花", "water": "水", "fire": "火", "star": "星星", "cloud": "雲", "rain": "雨", "snow": "雪", "wind": "風", "sky": "天空", "earth": "地球", "sea": "海", "mountain": "山", "city": "城市", "road": "道路", "door": "門", "window": "窗戶", "bed": "床", "table": "桌子", "chair": "椅子", "phone": "手機", "money": "錢", "clock": "時鐘", "key": "鑰匙",
+            "orange": "橘子", "grape": "葡萄", "watermelon": "西瓜", "strawberry": "草莓", "pizza": "披薩", "burger": "漢堡", "cake": "蛋糕", "icecream": "冰淇淋", "bread": "麵包", "cheese": "起司", "egg": "雞蛋", "milk": "牛奶", "coffee": "咖啡", "tea": "茶", "juice": "果汁", "wine": "紅酒", "beer": "啤酒", "knife": "刀", "fork": "叉", "spoon": "湯匙", "plate": "盤子", "bowl": "碗", "cup": "杯子", "glass": "玻璃杯", "bottle": "瓶子", "pot": "鍋子", "pan": "平底鍋", "stove": "爐子", "oven": "烤箱", "fridge": "冰箱",
+            "broccoli": "花椰菜", "cucumber": "黃瓜", "lettuce": "生菜", "mushroom": "蘑菇", "onion": "洋蔥", "garlic": "大蒜", "potato": "馬鈴薯", "carrot": "胡蘿蔔", "tomato": "番茄", "corn": "玉米", "avocado": "酪梨", "coconut": "椰子", "pineapple": "鳳梨", "mango": "芒果", "peach": "水蜜桃", "cherry": "櫻桃", "kiwi": "奇異果", "lemon": "檸檬", "melon": "哈密瓜", "peanut": "花生", "chestnut": "栗子", "bacon": "培根", "steak": "牛排", "sausage": "香腸", "hotdog": "大亨堡", "sandwich": "三明治", "taco": "塔可餅", "burrito": "墨西哥捲餅", "popcorn": "爆米花", "cookie": "餅乾"
         };
 
         const praiseWords = ['Good!', 'Great!', 'Excellent!', 'Awesome!', 'Perfect!'];
 
         let currentTheme = 'school';
+        let currentDifficulty = 'easy';
         let cardCount = 16;
+        let gameMode = '1p'; // '1p' or '2p'
 
-        let attempts = 0;
-        let matches = 0;
+        // Shared State
         let targetMatches = 8;
         let flippedCards = [];
         let lockBoard = false;
+        let matches = 0;
 
+        // 1P State
+        let attempts = 0;
         let startTime = 0;
         let timerInterval = null;
         let finalTime = 0;
 
+        // 2P State
+        let p1Score = 0;
+        let p2Score = 0;
+        let currentPlayer = 1; // 1 or 2
+
+        function toggleCustomWords() {
+            const panel = $('custom-words-panel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function saveCustomWords() {
+            const text = $('custom-words-input').value.trim();
+            if (!text) return;
+            let targetTheme = currentTheme === 'mixed' ? 'life' : currentTheme;
+            let targetDiff = currentDifficulty === 'mixed' ? 'normal' : currentDifficulty;
+
+            const lines = text.split('\n');
+            let added = 0;
+            lines.forEach(line => {
+                let parts = line.split(',');
+                if (parts.length === 2) {
+                    let w = parts[0].trim().toLowerCase();
+                    let e = parts[1].trim();
+                    if (w && e) {
+                        dictionary[targetTheme][targetDiff][w] = e;
+                        added++;
+                    }
+                }
+            });
+            if (added > 0) {
+                $('custom-words-msg').style.display = 'inline';
+                setTimeout(() => $('custom-words-msg').style.display = 'none', 3000);
+                $('custom-words-input').value = '';
+            }
+        }
+
         // UI Setup
+        $$('#mode-group .segment-btn').forEach(btn => {
+            btn.onclick = () => {
+                $$('#mode-group .segment-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                gameMode = btn.dataset.val;
+            }
+        });
+
         $$('#theme-group .segment-btn').forEach(btn => {
             btn.onclick = () => {
                 $$('#theme-group .segment-btn').forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
                 currentTheme = btn.dataset.val;
+            }
+        });
+
+        $$('#difficulty-group .segment-btn').forEach(btn => {
+            btn.onclick = () => {
+                $$('#difficulty-group .segment-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                currentDifficulty = btn.dataset.val;
             }
         });
 
@@ -587,13 +728,29 @@
         });
 
         // Audio System
-        const synth = window.speechSynthesis;
-        function speakWord(word) {
-            if (synth.speaking) synth.cancel();
-            const u = new SpeechSynthesisUtterance(word);
-            u.lang = 'en-US'; u.rate = 0.9; synth.speak(u);
+        function speakWord(wordText) {
+            if ('speechSynthesis' in window) {
+                let utter = new SpeechSynthesisUtterance(wordText);
+                utter.lang = 'en-US';
+                utter.rate = 1.0;
+                window.speechSynthesis.speak(utter);
+            }
         }
 
+        function speakChinese(wordKey) {
+            if ('speechSynthesis' in window) {
+                let zhWord = zhDict[wordKey];
+                if (!zhWord) zhWord = wordKey; // Fallback to raw word if not in dictionary
+                let utter = new SpeechSynthesisUtterance(zhWord);
+                utter.lang = 'zh-TW';
+                utter.rate = 1.0;
+                window.speechSynthesis.speak(utter);
+            }
+        }
+
+        // Long Press state track
+        let pressTimer;
+        let isLongPress = false;
         let audioCtx;
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -624,18 +781,119 @@
 
         function startGame() {
             initAudio();
-            generateBoard();
 
-            attempts = 0;
-            matches = 0;
-            updateHUD();
+            // Setup UI visibility based on mode
+            if (gameMode === '1p') {
+                $$('.hud-1p-only').forEach(el => el.style.display = 'block');
+                $$('.hud-2p-only').forEach(el => el.style.display = 'none');
 
-            startTime = Date.now();
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(updateTimer, 50);
-            updateTimer();
+                attempts = 0;
+                matches = 0;
+                generateBoard();
+                updateHUD();
 
+                startTime = Date.now();
+                if (timerInterval) clearInterval(timerInterval);
+                timerInterval = setInterval(updateTimer, 50);
+                updateTimer();
+
+                showScreen('game-ui');
+            } else {
+                $$('.hud-1p-only').forEach(el => el.style.display = 'none');
+                $$('.hud-2p-only').forEach(el => el.style.display = 'block');
+
+                p1Score = 0;
+                p2Score = 0;
+                matches = 0;
+                currentPlayer = 1;
+
+                startDrawPhase();
+            }
+        }
+
+        // --- 2P DRAW PHASE ---
+        function startDrawPhase() {
             showScreen('game-ui');
+            const board = $('game-board');
+            board.innerHTML = '';
+            board.style.gridTemplateColumns = 'repeat(2, 1fr)';
+            board.style.gridTemplateRows = '1fr';
+
+            $('hud-main-title').innerText = 'DRAW FOR FIRST TURN';
+            $('hud-turn-indicator').innerText = 'P1 DRAW';
+            $('hud-turn-indicator').style.backgroundColor = '#4ade80';
+
+            // Generate 2 draw cards
+            let p1Num = Math.floor(Math.random() * 100) + 1;
+            let p2Num = Math.floor(Math.random() * 100) + 1;
+            while (p1Num === p2Num) p2Num = Math.floor(Math.random() * 100) + 1;
+
+            let drawState = 0; // 0: None, 1: P1 picked, 2: P2 picked
+
+            function createDrawCard(playerTag, num) {
+                const el = document.createElement('div');
+                el.className = 'card pixel-border';
+                el.style.width = '200px';
+                el.style.height = '300px';
+                el.style.margin = 'auto';
+                el.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-front">?</div>
+                        <div class="card-back">
+                            <div style="font-size: 4rem; display:flex; align-items:center; justify-content:center; height:100%;">${num}</div>
+                        </div>
+                    </div>
+                `;
+                el.onclick = () => {
+                    if (el.classList.contains('flipped')) return;
+                    if (drawState === 0 && playerTag === 'P1') {
+                        el.classList.add('flipped');
+                        playSynth('triangle', 600, 300, 0.1);
+                        drawState = 1;
+                        $('hud-turn-indicator').innerText = 'P2 DRAW';
+                        $('hud-turn-indicator').style.backgroundColor = '#f87171';
+                    } else if (drawState === 1 && playerTag === 'P2') {
+                        el.classList.add('flipped');
+                        playSynth('triangle', 600, 300, 0.1);
+                        drawState = 2;
+
+                        setTimeout(() => {
+                            if (p1Num < p2Num) {
+                                currentPlayer = 1;
+                                $('hud-turn-indicator').innerText = 'P1 GETS FIRST TURN!';
+                                $('hud-turn-indicator').style.backgroundColor = '#4ade80';
+                            } else {
+                                currentPlayer = 2;
+                                $('hud-turn-indicator').innerText = 'P2 GETS FIRST TURN!';
+                                $('hud-turn-indicator').style.backgroundColor = '#f87171';
+                            }
+                            playSynth('square', 800, 1600, 0.4);
+
+                            setTimeout(() => {
+                                $('hud-main-title').innerText = 'MEMORY';
+                                update2PHUD();
+                                generateBoard();
+                            }, 3000);
+                        }, 1000);
+                    }
+                };
+                return el;
+            }
+
+            board.appendChild(createDrawCard('P1', p1Num));
+            board.appendChild(createDrawCard('P2', p2Num));
+        }
+
+        function update2PHUD() {
+            $('hud-p1-score').innerText = `P1 SCORE: ${p1Score}`;
+            $('hud-p2-score').innerText = `P2 SCORE: ${p2Score}`;
+            if (currentPlayer === 1) {
+                $('hud-turn-indicator').innerText = 'P1 TURN';
+                $('hud-turn-indicator').style.backgroundColor = '#4ade80';
+            } else {
+                $('hud-turn-indicator').innerText = 'P2 TURN';
+                $('hud-turn-indicator').style.backgroundColor = '#f87171';
+            }
         }
 
         function updateTimer() {
@@ -648,8 +906,8 @@
             board.innerHTML = '';
 
             // Grid config based on card count
-            let cols = cardCount === 12 ? 3 : cardCount === 16 ? 4 : 4;
-            let rows = cardCount === 12 ? 4 : cardCount === 16 ? 4 : 5;
+            let cols = cardCount <= 16 ? (cardCount === 12 ? 3 : 4) : (cardCount === 30 ? 5 : 4);
+            let rows = cardCount / cols;
             board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
             board.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
 
@@ -674,34 +932,126 @@
                 el.dataset.id = card.id;
                 el.dataset.type = card.type;
                 el.dataset.rawWord = card.rawWord;
-                el.onclick = () => flipCard(el);
+
+                // Long Press Handlers
+                const startPress = (e) => {
+                    // Prevent right click menu from causing issues
+                    if (e.type === 'mousedown' && e.button !== 0) return;
+                    isLongPress = false;
+                    pressTimer = setTimeout(() => {
+                        isLongPress = true;
+                        if (el.classList.contains('flipped') || el.classList.contains('matched')) {
+                            speakChinese(card.rawWord);
+                        }
+                    }, 600);
+                };
+
+                const endPress = (e) => {
+                    clearTimeout(pressTimer);
+                    if (isLongPress) return; // Prevent click action
+                    // Only flip if it was a valid short press
+                    // On touch devices we prevent default click and manually handle flip, or let standard click pass
+                };
+
+                el.addEventListener('mousedown', startPress);
+                el.addEventListener('touchstart', startPress, { passive: true });
+
+                // When user stops touching or leaves the card area
+                el.addEventListener('mouseup', endPress);
+                el.addEventListener('mouseleave', () => clearTimeout(pressTimer));
+                el.addEventListener('touchend', endPress);
+
+                // Final click logic wraps flipCard
+                el.onclick = (e) => {
+                    clearTimeout(pressTimer);
+                    if (isLongPress) {
+                        e.preventDefault();
+                        isLongPress = false;
+                        return; // Block flip if long pressed
+                    }
+                    if (el.classList.contains('flipped') || el.classList.contains('matched')) {
+                        speakChinese(card.rawWord);
+                        return;
+                    }
+                    flipCard(el);
+                };
+
                 board.appendChild(el);
             });
         }
 
         function generateDeck() {
-            let words = Object.keys(dictionary[currentTheme]);
+            let words = [];
+            let dictMap = {};
+
+            let themesToUse = currentTheme === 'mixed' ? ['school', 'body', 'animals', 'life'] : [currentTheme];
+            let diffsToUse = currentDifficulty === 'mixed' ? ['easy', 'normal', 'hard'] : [currentDifficulty];
+
+            for (let t of themesToUse) {
+                for (let d of diffsToUse) {
+                    if (dictionary[t] && dictionary[t][d]) {
+                        for (let w in dictionary[t][d]) {
+                            words.push(w);
+                            dictMap[w] = dictionary[t][d][w];
+                        }
+                    }
+                }
+            }
+
             let pairsNeeded = cardCount / 2;
             let selectedWords = [];
 
-            // Select random words
+            // Read Played Words from localStorage
+            let noRepeat = $('no-repeat-toggle').checked;
+            let playedKey = 'memoryPlayed_' + currentTheme + '_' + currentDifficulty;
+            let playedWords = JSON.parse(localStorage.getItem(playedKey)) || [];
+
             let mixedWords = [...words];
+
+            // First random shuffle
+            mixedWords.sort(() => 0.5 - Math.random());
+
+            // Then sort by "played" status if no-repeat is enabled
+            if (noRepeat) {
+                mixedWords.sort((a, b) => {
+                    let aPlayed = playedWords.includes(a);
+                    let bPlayed = playedWords.includes(b);
+                    if (aPlayed && !bPlayed) return 1;   // push played words to back
+                    if (!aPlayed && bPlayed) return -1;
+                    return 0; // keep relative random order if same status
+                });
+            }
+
             while (selectedWords.length < pairsNeeded) {
-                mixedWords.sort(() => 0.5 - Math.random());
                 for (let w of mixedWords) {
                     if (selectedWords.length < pairsNeeded && !selectedWords.includes(w)) {
                         selectedWords.push(w);
-                    } else if (selectedWords.length < pairsNeeded) {
-                        // Allow duplicates if we need more pairs than available words
-                        selectedWords.push(w);
+                        if (!playedWords.includes(w)) {
+                            playedWords.push(w);
+                        }
                     }
                 }
+                // Stop loop to prevent infinite if dictionary is too small
+                if (selectedWords.length < pairsNeeded && mixedWords.length === 0) break;
+                // In theory mixedWords should be at least pairsNeeded. If we exhaust, we duplicate? We don't want to infinite loop.
+                if (selectedWords.length < pairsNeeded) {
+                    // Forcefully fill up with random if desperately short on words (e.g. testing with very small dict)
+                    selectedWords.push(mixedWords[Math.floor(Math.random() * mixedWords.length)]);
+                }
+            }
+
+            if (noRepeat) {
+                // If we've played everything, reset the history so they cycle again
+                if (playedWords.length >= words.length) {
+                    playedWords = [];
+                }
+                localStorage.setItem(playedKey, JSON.stringify(playedWords));
             }
 
             let deck = [];
             for (let w of selectedWords) {
                 deck.push({ id: w, type: 'word', content: w.toUpperCase(), rawWord: w });
-                deck.push({ id: w, type: 'emoji', content: dictionary[currentTheme][w], rawWord: w });
+                deck.push({ id: w, type: 'emoji', content: dictMap[w], rawWord: w });
             }
             deck.sort(() => 0.5 - Math.random());
             return deck;
@@ -754,6 +1104,13 @@
 
                 flippedCards = [];
                 matches++;
+
+                if (gameMode === '2p') {
+                    if (currentPlayer === 1) p1Score++;
+                    else p2Score++;
+                    update2PHUD();
+                }
+
                 updateHUD();
                 lockBoard = false;
 
@@ -771,27 +1128,58 @@
                 flippedCards = [];
                 lockBoard = false;
                 playSynth('sawtooth', 200, 100, 0.2); // Error sound
+
+                if (gameMode === '2p') {
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                    update2PHUD();
+                }
             }, 1200); // 1.2s to memorize
         }
 
         function updateHUD() {
-            $('hud-matches').innerText = `MATCHES: ${matches} / ${targetMatches}`;
-            $('hud-attempts').innerText = `ATTEMPTS: ${attempts}`;
+            if (gameMode === '1p') {
+                $('hud-matches').innerText = `MATCHES: ${matches} / ${targetMatches}`;
+                $('hud-attempts').innerText = `ATTEMPTS: ${attempts}`;
+            }
         }
 
         function win() {
-            clearInterval(timerInterval);
-            finalTime = (Date.now() - startTime) / 1000;
-            $('final-time').innerText = finalTime.toFixed(2);
-            $('final-attempts').innerText = attempts;
+            if (gameMode === '1p') {
+                clearInterval(timerInterval);
+                finalTime = (Date.now() - startTime) / 1000;
+                $('victory-title').innerText = 'ALL MATCHED!';
+                $('victory-title').style.color = '#000';
+                $('victory-stats').innerHTML = `
+                    Time: <span id="final-time" style="color:var(--text-gold);">${finalTime.toFixed(2)}</span> s<br>
+                    Attempts: <span id="final-attempts" style="color:var(--text-gold);">${attempts}</span>
+                `;
 
-            let bestTime = localStorage.getItem('memoryBest_' + cardCount);
-            if (!bestTime || finalTime < parseFloat(bestTime)) {
-                localStorage.setItem('memoryBest_' + cardCount, finalTime.toFixed(2));
-                $('new-record-msg').style.display = 'block';
-                updateBestRecordsUI();
+                let bestTime = localStorage.getItem('memoryBest_' + cardCount);
+                if (!bestTime || finalTime < parseFloat(bestTime)) {
+                    localStorage.setItem('memoryBest_' + cardCount, finalTime.toFixed(2));
+                    $('new-record-msg').style.display = 'block';
+                    updateBestRecordsUI();
+                } else {
+                    $('new-record-msg').style.display = 'none';
+                }
             } else {
                 $('new-record-msg').style.display = 'none';
+
+                if (p1Score > p2Score) {
+                    $('victory-title').innerText = 'PLAYER 1 WINS!';
+                    $('victory-title').style.color = '#4ade80';
+                } else if (p2Score > p1Score) {
+                    $('victory-title').innerText = 'PLAYER 2 WINS!';
+                    $('victory-title').style.color = '#f87171';
+                } else {
+                    $('victory-title').innerText = 'DRAW!';
+                    $('victory-title').style.color = '#FFF';
+                }
+
+                $('victory-stats').innerHTML = `
+                    P1: <span style="color:#4ade80;">${p1Score}</span> pairs<br>
+                    P2: <span style="color:#f87171;">${p2Score}</span> pairs
+                `;
             }
 
             showScreen('victory-menu');
@@ -860,10 +1248,15 @@
             let b12 = localStorage.getItem('memoryBest_12');
             let b16 = localStorage.getItem('memoryBest_16');
             let b20 = localStorage.getItem('memoryBest_20');
+            let b24 = localStorage.getItem('memoryBest_24');
+            let b30 = localStorage.getItem('memoryBest_30');
             $('best-12').innerText = b12 ? b12 : '--.--';
             $('best-16').innerText = b16 ? b16 : '--.--';
             $('best-20').innerText = b20 ? b20 : '--.--';
+            if ($('best-24')) $('best-24').innerText = b24 ? b24 : '--.--';
+            if ($('best-30')) $('best-30').innerText = b30 ? b30 : '--.--';
         }
+
 
         updateBestRecordsUI();
     </script>
