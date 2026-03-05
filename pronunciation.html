@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Pronunciation Practice - Ray Edition</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#333333">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-checker: #7E7E7E;
+            --bg-checker-dark: #707070;
+            --panel-bg: #DCDCDC;
+            --panel-outer-border: #000;
+            --panel-inner-light: #FFF;
+            --panel-inner-dark: #555;
+            --btn-gray: #BDBDBD;
+            --btn-yellow: #FFD700;
+            --btn-blue: #4682B4;
+            --btn-green: #32CD32;
+            --btn-red: #FF6347;
+            --text-dark: #222;
+            --text-gold: #FFD700;
+            --hud-bg-black: rgba(34, 34, 34, 0.9);
+            --hud-bg-white: rgba(255, 255, 255, 0.95);
+            --game-sky: #74B9FF;
+            --game-grass: #55EFC4;
+            --game-dirt: #8D6E63;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            margin: 0;
+            padding: 0;
+            font-family: 'VT323', monospace
+        }
+
+        body,
+        html {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--bg-checker);
+            background-image: linear-gradient(45deg, var(--bg-checker-dark) 25%, transparent 25%, transparent 75%, var(--bg-checker-dark) 75%), linear-gradient(45deg, var(--bg-checker-dark) 25%, transparent 25%, transparent 75%, var(--bg-checker-dark) 75%);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+            touch-action: manipulation
+        }
+
+        .pixel-border {
+            border: 4px solid var(--panel-outer-border);
+            position: relative
+        }
+
+        .pixel-border::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-top: 4px solid var(--panel-inner-light);
+            border-left: 4px solid var(--panel-inner-light);
+            border-bottom: 4px solid var(--panel-inner-dark);
+            border-right: 4px solid var(--panel-inner-dark);
+            pointer-events: none
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0
+        }
+
+        .active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto
+        }
+
+        #main-menu {
+            padding: 20px;
+            gap: 15px
+        }
+
+        .menu-panel {
+            background: var(--panel-bg);
+            width: 100%;
+            max-width: 600px;
+            padding: 25px 15px 15px;
+            position: relative
+        }
+
+        .panel-header {
+            position: absolute;
+            top: -12px;
+            left: 16px;
+            background: var(--panel-outer-border);
+            color: var(--text-gold);
+            padding: 2px 8px;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            z-index: 2
+        }
+
+        .btn {
+            background: var(--btn-gray);
+            color: #000;
+            padding: 8px 16px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            position: relative;
+            text-shadow: 1px 1px 0 #FFF;
+            transition: transform .1s
+        }
+
+        .btn:active {
+            transform: scale(.95)
+        }
+
+        .btn-yellow {
+            background: var(--btn-yellow)
+        }
+
+        .btn-blue {
+            background: var(--btn-blue);
+            color: #FFF;
+            text-shadow: 1px 1px 0 #000
+        }
+
+        .btn-green {
+            background: var(--btn-green);
+            color: #FFF;
+            text-shadow: 2px 2px 0 #000;
+            font-size: 3rem;
+            padding: 15px 40px
+        }
+
+        .btn-red {
+            background: var(--btn-red);
+            color: #FFF;
+            text-shadow: 1px 1px 0 #000
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 1.4rem;
+            color: #000;
+            margin: 15px 0 10px;
+            font-weight: bold
+        }
+
+        .segment-group {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap
+        }
+
+        .segment-btn {
+            background: var(--btn-gray);
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 1.4rem;
+            color: #444;
+            border: 4px solid transparent
+        }
+
+        .segment-btn.selected {
+            background: var(--panel-inner-light);
+            border-top: 4px solid var(--panel-inner-dark);
+            border-left: 4px solid var(--panel-inner-dark);
+            border-bottom: 4px solid var(--panel-inner-light);
+            border-right: 4px solid var(--panel-inner-light);
+            color: #000;
+            font-weight: bold;
+            box-shadow: inset 4px 4px 0 rgba(0, 0, 0, .1)
+        }
+
+        .action-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px
+        }
+
+        #game-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background: linear-gradient(to bottom, var(--game-sky) 0%, var(--game-sky) 38%, var(--game-grass) 38%, var(--game-grass) 42%, var(--game-dirt) 42%, var(--game-dirt) 100%)
+        }
+
+        #hud-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 10;
+            pointer-events: none;
+            padding: env(safe-area-inset-top, 10px) 10px 0 10px
+        }
+
+        .hud-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start
+        }
+
+        .hud-left-panel {
+            background: var(--hud-bg-black);
+            border: 4px solid var(--panel-inner-light);
+            border-right-color: #999;
+            border-bottom-color: #999;
+            padding: 10px 15px;
+            color: #FFF;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, .5);
+            display: flex;
+            flex-direction: column;
+            gap: 8px
+        }
+
+        .hud-right-group {
+            display: flex;
+            gap: 10px;
+            pointer-events: auto
+        }
+
+        .hud-btn {
+            font-size: 1.2rem;
+            padding: 10px 15px;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, .5);
+            border: 4px solid #FFF
+        }
+
+        .hud-btn-exit {
+            background: var(--btn-yellow);
+            color: #000;
+            border-color: #FFF #999 #999 #FFF
+        }
+
+        .hud-center-panel {
+            background: var(--hud-bg-white);
+            border: 6px solid var(--btn-blue);
+            padding: 10px 20px;
+            text-align: center;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, .5);
+            min-width: 100px
+        }
+
+        .hud-title {
+            font-size: 1.5rem;
+            color: #000;
+            font-weight: bold
+        }
+
+        #game-board {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            max-width: 600px;
+            height: calc(100% - 120px);
+            display: grid;
+            gap: 10px;
+            justify-content: center;
+            align-content: start;
+            z-index: 5;
+            padding-bottom: 20px
+        }
+
+        .card {
+            perspective: 1000px;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+            min-height: 80px;
+            position: relative
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform .6s;
+            transform-style: preserve-3d
+        }
+
+        .card.flipped .card-inner,
+        .card.matched .card-inner {
+            transform: rotateY(180deg)
+        }
+
+        .card-front,
+        .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 4px solid #000;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, .5);
+            border-top-color: var(--panel-inner-light);
+            border-left-color: var(--panel-inner-light);
+            border-bottom-color: var(--panel-inner-dark);
+            border-right-color: var(--panel-inner-dark)
+        }
+
+        .card-front {
+            background: #D97736;
+            background-image: linear-gradient(45deg, #C56627 25%, transparent 25%, transparent 75%, #C56627 75%), linear-gradient(45deg, #C56627 25%, transparent 25%, transparent 75%, #C56627 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            color: #FFF;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 0 #000
+        }
+
+        .card-back {
+            background: #FFF;
+            color: #000;
+            transform: rotateY(180deg);
+            flex-direction: column
+        }
+
+        .card.matched .card-back {
+            background: #E8F5E9;
+            border-color: var(--btn-green)
+        }
+
+        .card.challenge .card-back {
+            border-color: #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, .8), 4px 4px 0 rgba(0, 0, 0, .5);
+            animation: challengePulse 1s infinite
+        }
+
+        .card-emoji {
+            font-size: clamp(2rem, 8vw, 3.5rem);
+            line-height: 1
+        }
+
+        .card-word {
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: clamp(1.2rem, 5vw, 2rem);
+            padding: 5px;
+            text-align: center;
+            word-break: break-all
+        }
+
+        @keyframes challengePulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(255, 215, 0, .8), 4px 4px 0 rgba(0, 0, 0, .5)
+            }
+
+            50% {
+                box-shadow: 0 0 40px rgba(255, 215, 0, 1), 4px 4px 0 rgba(0, 0, 0, .5)
+            }
+        }
+
+        .dialog-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, .6);
+            z-index: 20;
+            display: none;
+            align-items: center;
+            justify-content: center
+        }
+
+        .dialog-overlay.active {
+            display: flex
+        }
+
+        .dialog-box {
+            background: var(--panel-bg);
+            padding: 30px;
+            text-align: center;
+            width: 80%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px
+        }
+
+        .dialog-title {
+            font-size: 3rem;
+            color: #000;
+            text-shadow: 2px 2px 0 #FFF
+        }
+
+        /* Challenge Overlay */
+        #challenge-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, .75);
+            z-index: 15;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px
+        }
+
+        #challenge-overlay.active {
+            display: flex
+        }
+
+        .challenge-panel {
+            background: var(--panel-bg);
+            padding: 30px;
+            text-align: center;
+            width: 90%;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px
+        }
+
+        .challenge-word {
+            font-size: 3.5rem;
+            color: #000;
+            text-shadow: 2px 2px 0 #FFD700;
+            letter-spacing: 4px;
+            text-transform: uppercase
+        }
+
+        .challenge-emoji {
+            font-size: 4rem
+        }
+
+        .challenge-hint {
+            font-size: 1.2rem;
+            color: #555
+        }
+
+        .mic-btn {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: var(--btn-red);
+            border: 6px solid #8B0000;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #FFF;
+            transition: all .2s;
+            box-shadow: 0 6px 0 #8B0000
+        }
+
+        .mic-btn:active,
+        .mic-btn.recording {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #8B0000
+        }
+
+        .mic-btn.recording {
+            background: #FF0000;
+            animation: micPulse .8s infinite
+        }
+
+        @keyframes micPulse {
+
+            0%,
+            100% {
+                transform: translateY(4px) scale(1)
+            }
+
+            50% {
+                transform: translateY(4px) scale(1.1)
+            }
+        }
+
+        /* Waveform */
+        .waveform {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            height: 50px;
+            opacity: 0;
+            transition: opacity .3s
+        }
+
+        .waveform.active {
+            opacity: 1
+        }
+
+        .wave-bar {
+            width: 6px;
+            background: var(--btn-green);
+            border-radius: 3px;
+            animation: none
+        }
+
+        .waveform.active .wave-bar {
+            animation: waveAnim .6s ease-in-out infinite
+        }
+
+        .wave-bar:nth-child(1) {
+            height: 15px;
+            animation-delay: 0s
+        }
+
+        .wave-bar:nth-child(2) {
+            height: 25px;
+            animation-delay: .1s
+        }
+
+        .wave-bar:nth-child(3) {
+            height: 35px;
+            animation-delay: .2s
+        }
+
+        .wave-bar:nth-child(4) {
+            height: 45px;
+            animation-delay: .3s
+        }
+
+        .wave-bar:nth-child(5) {
+            height: 35px;
+            animation-delay: .4s
+        }
+
+        .wave-bar:nth-child(6) {
+            height: 25px;
+            animation-delay: .5s
+        }
+
+        .wave-bar:nth-child(7) {
+            height: 15px;
+            animation-delay: .6s
+        }
+
+        @keyframes waveAnim {
+
+            0%,
+            100% {
+                transform: scaleY(1)
+            }
+
+            50% {
+                transform: scaleY(.3)
+            }
+        }
+
+        /* Accuracy meter */
+        .accuracy-container {
+            width: 80%;
+            max-width: 300px;
+            height: 30px;
+            background: #333;
+            border: 4px solid #000;
+            position: relative;
+            overflow: hidden
+        }
+
+        .accuracy-bar {
+            height: 100%;
+            width: 0;
+            transition: width .5s, background .5s
+        }
+
+        .accuracy-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #FFF;
+            font-size: 1.3rem;
+            text-shadow: 1px 1px 0 #000;
+            z-index: 1
+        }
+
+        /* Feedback */
+        .feedback-icon {
+            font-size: 5rem;
+            opacity: 0;
+            transition: all .5s;
+            position: absolute;
+            z-index: 25;
+            pointer-events: none
+        }
+
+        .feedback-icon.show {
+            opacity: 1;
+            animation: feedbackPop .8s ease-out forwards
+        }
+
+        @keyframes feedbackPop {
+            0% {
+                transform: scale(0) rotate(-20deg);
+                opacity: 0
+            }
+
+            50% {
+                transform: scale(1.3) rotate(10deg);
+                opacity: 1
+            }
+
+            100% {
+                transform: scale(1) rotate(0);
+                opacity: 0
+            }
+        }
+
+        /* Score popup */
+        .score-popup {
+            position: absolute;
+            z-index: 25;
+            font-size: 2rem;
+            color: var(--text-gold);
+            text-shadow: 2px 2px 0 #000;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0)
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-60px)
+            }
+        }
+
+        @media(max-width:500px) {
+            .hud-center-panel {
+                display: none
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="main-menu" class="screen active">
+        <div class="menu-panel pixel-border"
+            style="text-align:center;margin-bottom:20px;background:rgba(0,0,0,.8);border-color:#FFF">
+            <div class="dialog-title" style="color:#FFF;text-shadow:2px 2px 0 var(--btn-blue)">🎤 PRONUNCIATION</div>
+            <div style="color:#FFF;font-size:1.2rem;margin-top:10px">翻牌配對 + 發音挑戰！</div>
+        </div>
+        <div class="menu-panel pixel-border">
+            <div class="panel-header">GAME SETTINGS</div>
+            <div class="section-title">[ 選擇主題 THEME ]</div>
+            <div class="segment-group" id="theme-group">
+                <div class="segment-btn selected" data-val="school">SCHOOL</div>
+                <div class="segment-btn" data-val="body">BODY</div>
+                <div class="segment-btn" data-val="animals">ANIMALS</div>
+                <div class="segment-btn" data-val="life">LIFE</div>
+                <div class="segment-btn" data-val="mixed" style="background:var(--btn-yellow)">ALL MIXED</div>
+            </div>
+            <div class="section-title" style="margin-top:5px">[ 選擇難度 DIFFICULTY ]</div>
+            <div class="segment-group" id="difficulty-group">
+                <div class="segment-btn selected" data-val="easy">EASY</div>
+                <div class="segment-btn" data-val="normal">NORMAL</div>
+                <div class="segment-btn" data-val="hard">HARD</div>
+            </div>
+            <div class="section-title">[ 卡牌數量 CARDS ]</div>
+            <div class="segment-group" id="grid-group">
+                <div class="segment-btn" data-val="12">12 張</div>
+                <div class="segment-btn selected" data-val="16">16 張</div>
+                <div class="segment-btn" data-val="20">20 張</div>
+                <div class="segment-btn" data-val="24">24 張</div>
+            </div>
+            <div class="section-title">[ 最佳紀錄 BEST RECORDS ]</div>
+            <div
+                style="text-align:center;font-size:1.4rem;background:#222;color:#FFF;padding:10px;border:4px solid var(--panel-inner-dark);margin-bottom:10px">
+                12張: <span id="best-12" style="color:var(--text-gold)">--.--</span> s |
+                16張: <span id="best-16" style="color:var(--text-gold)">--.--</span> s <br>
+                20張: <span id="best-20" style="color:var(--text-gold)">--.--</span> s |
+                24張: <span id="best-24" style="color:var(--text-gold)">--.--</span> s
+            </div>
+        </div>
+        <div class="action-area">
+            <button class="btn pixel-border btn-green" onclick="startGame()">▶ PLAY NOW</button>
+            <button class="btn pixel-border" onclick="window.location.href='index.html'"
+                style="margin-top:20px;font-size:1.2rem">↲ BACK TO HOMEPAGE</button>
+        </div>
+    </div>
+
+    <div id="game-ui" class="screen">
+        <div id="game-bg"></div>
+        <div id="hud-layer">
+            <div class="hud-top-row">
+                <div class="hud-left-panel">
+                    <div id="hud-matches" style="font-size:1.2rem;letter-spacing:2px">MATCHES: 0 / 8</div>
+                    <div id="hud-score" style="font-size:1.2rem;color:var(--btn-yellow);letter-spacing:2px">SCORE: 0
+                    </div>
+                </div>
+                <div class="hud-center-panel">
+                    <div class="hud-title">PRONUNCIATION</div>
+                    <div id="hud-timer"
+                        style="font-size:1.5rem;color:#FFF;background:#000;padding:2px 10px;margin-top:5px;border:2px solid #555">
+                        00.00 s</div>
+                </div>
+                <div class="hud-right-group">
+                    <button class="hud-btn hud-btn-exit" onclick="quitToMenu()">↲ EXIT</button>
+                </div>
+            </div>
+        </div>
+        <div id="game-board"></div>
+        <div id="challenge-overlay">
+            <div class="challenge-panel pixel-border">
+                <div class="challenge-hint">🎯 SAY THIS WORD / 唸出這個單字</div>
+                <div class="challenge-emoji" id="challenge-emoji">🍎</div>
+                <div class="challenge-word" id="challenge-word">APPLE</div>
+                <div class="waveform" id="waveform">
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                </div>
+                <button class="mic-btn" id="mic-btn" onclick="toggleRecognition()">🎤</button>
+                <div class="accuracy-container" id="accuracy-container" style="display:none">
+                    <div class="accuracy-bar" id="accuracy-bar"></div>
+                    <div class="accuracy-label" id="accuracy-label">0%</div>
+                </div>
+                <div id="challenge-status"
+                    style="font-size:1.3rem;color:#FFF;text-shadow:1px 1px 0 #000;min-height:1.5em"></div>
+                <button class="btn pixel-border btn-blue" id="listen-btn" onclick="speakChallengeWord()"
+                    style="font-size:1.2rem">🔊 LISTEN AGAIN</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="victory-menu" class="screen dialog-overlay">
+        <div class="dialog-box pixel-border" style="background:rgba(100,255,100,.9)">
+            <div class="dialog-title">🎉 ALL MATCHED!</div>
+            <div id="new-record-msg"
+                style="display:none;color:#FF0000;font-size:2rem;font-weight:bold;text-shadow:2px 2px 0 #FFF;margin:-10px 0">
+                🎉 NEW RECORD! 🎉</div>
+            <div id="victory-stats" style="font-size:1.5rem;background:#000;color:#FFF;padding:10px">
+                Time: <span id="final-time" style="color:var(--text-gold)">00.00</span> s<br>
+                Score: <span id="final-score" style="color:var(--text-gold)">0</span>
+            </div>
+            <button class="btn pixel-border btn-yellow" style="font-size:2rem" onclick="quitToMenu()">CONTINUE</button>
+        </div>
+    </div>
+
+    <script>
+        /* ===== PRONUNCIATION PRACTICE GAME - Ray Edition ===== */
+        const $ = id => document.getElementById(id);
+        const $$ = s => document.querySelectorAll(s);
+
+        // ===== DICTIONARY =====
+        const dictionary = {
+            school: {
+                easy: { "book": "📖", "pen": "🖊️", "pencil": "✏️", "desk": "🪑", "bag": "🎒", "clock": "⏰", "map": "🗺️", "ruler": "📏", "eraser": "🧽", "bus": "🚌", "bell": "🔔", "paper": "📄", "student": "🧑‍🎓", "teacher": "🧑‍🏫", "glue": "🧪", "art": "🎨", "music": "🎵", "sport": "⚽", "math": "➕", "read": "📖", "write": "✍️", "draw": "🖍️", "board": "📋", "chair": "🪑", "clip": "📎", "tape": "📼", "test": "💯", "grade": "A", "page": "📄", "note": "📓" },
+                normal: { "backpack": "🎒", "calculator": "🖩", "compass": "🧭", "globe": "🌍", "library": "📚", "projector": "📽️", "chalk": "🖊️", "notebook": "📓", "homework": "📝", "textbook": "📚", "dictionary": "📕", "uniform": "👕", "classroom": "🏫", "cafeteria": "🍱", "playground": "🏃", "principal": "👨‍💼", "recess": "🔔", "science": "🔬", "history": "🏛️", "geography": "🗺️", "biology": "🦠", "chemistry": "🧪", "physics": "🔭", "literature": "📖", "grammar": "✍️", "exam": "💯", "quiz": "❓", "lesson": "👩‍🏫", "semester": "📅", "diploma": "📜" },
+                hard: { "microscope": "🔬", "telescope": "🔭", "protractor": "📐", "encyclopedia": "📚", "laboratory": "🧪", "auditorium": "🎭", "gymnasium": "🏟️", "curriculum": "📋", "syllabus": "📄", "assignment": "📝", "thesis": "🎓", "graduation": "🎓", "scholarship": "💰", "tuition": "💵", "detention": "⌛", "attendance": "✅", "kindergarten": "🧸", "elementary": "🏫", "university": "🎓", "professor": "👨‍🏫", "campus": "🏛️", "dormitory": "🛏️", "fraternity": "🍻", "sorority": "🎀", "alumni": "🎓", "valedictorian": "🥇", "academic": "📚", "scholastic": "📝", "intellectual": "🧠", "education": "🎒" }
+            },
+            body: {
+                easy: { "eye": "👁️", "ear": "👂", "nose": "👃", "mouth": "👄", "hand": "✋", "head": "👱", "arm": "💪", "leg": "🦵", "foot": "🦶", "hair": "💇", "tooth": "🦷", "lip": "💋", "face": "👦", "knee": "🧎", "neck": "🧣", "back": "🔙", "chest": "👕", "stomach": "🤰", "finger": "👆", "toe": "🦶", "nail": "💅", "bone": "🦴", "blood": "🩸", "heart": "❤️", "brain": "🧠", "skin": "🧴", "tear": "💧", "sweat": "💦", "tongue": "👅", "thumb": "👍" },
+                normal: { "shoulder": "💪", "elbow": "💪", "wrist": "💪", "ankle": "🦶", "heel": "👠", "forehead": "🤦", "cheek": "😊", "chin": "🧔", "beard": "🧔", "mustache": "🥸", "eyebrow": "🤨", "eyelash": "👁️", "throat": "🗣️", "lung": "🫁", "liver": "🥩", "waist": "👖", "hip": "💃", "thigh": "🦵", "calf": "🦵", "muscle": "💪", "skeleton": "💀", "skull": "☠️", "vein": "🩸", "pulse": "💓", "breath": "😮‍💨", "voice": "🗣️", "sight": "👁️", "hearing": "👂", "smell": "👃", "taste": "👅" },
+                hard: { "abdomen": "🤰", "intestine": "🍝", "kidney": "🫘", "stomachache": "🤒", "headache": "🤕", "toothache": "🦷", "medicine": "💊", "hospital": "🏥", "doctor": "👨‍⚕️", "nurse": "👩‍⚕️", "patient": "🛌", "surgery": "🔪", "pharmacy": "🏪", "ambulance": "🚑", "wheelchair": "🦽", "crutch": "🩼", "bandage": "🩹", "thermometer": "🌡️", "stethoscope": "🩺", "syringe": "💉", "virus": "🦠", "bacteria": "🦠", "infection": "🤒", "fever": "🤒", "cough": "🤧", "sneeze": "🤧", "allergy": "🤧", "asthma": "😮‍💨", "cancer": "🦀", "disease": "🤒" }
+            },
+            animals: {
+                easy: { "dog": "🐶", "cat": "🐱", "bird": "🐦", "fish": "🐟", "pig": "🐷", "cow": "🐮", "horse": "🐴", "sheep": "🐑", "duck": "🦆", "chicken": "🐔", "mouse": "🐭", "bear": "🐻", "lion": "🦁", "tiger": "🐯", "monkey": "🐒", "elephant": "🐘", "frog": "🐸", "snake": "🐍", "bug": "🐛", "bee": "🐝", "ant": "🐜", "spider": "🕷️", "rabbit": "🐰", "fox": "🦊", "wolf": "🐺", "deer": "🦌", "bat": "🦇", "owl": "🦉", "shark": "🦈", "whale": "🐳" },
+                normal: { "penguin": "🐧", "dolphin": "🐬", "turtle": "🐢", "crocodile": "🐊", "hippo": "🦛", "rhino": "🦏", "giraffe": "🦒", "zebra": "🦓", "camel": "🐪", "kangaroo": "🦘", "koala": "🐨", "panda": "🐼", "sloth": "🦥", "otter": "🦦", "beaver": "🦫", "skunk": "🦨", "raccoon": "🦝", "badger": "🦡", "hedgehog": "🦔", "squirrel": "🐿️", "swan": "🦢", "flamingo": "🦩", "peacock": "🦚", "parrot": "🦜", "eagle": "🦅", "octopus": "🐙", "squid": "🦑", "crab": "🦀", "lobster": "🦞", "shrimp": "🦐" },
+                hard: { "chameleon": "🦎", "iguana": "🦎", "dinosaur": "🦖", "t-rex": "🦖", "pterodactyl": "🦕", "mammoth": "🦣", "gorilla": "🦍", "orangutan": "🦧", "chimpanzee": "🐒", "baboon": "🐒", "lemur": "🐵", "meerkat": "🦦", "walrus": "🦭", "seal": "🦭", "platypus": "🦆", "echidna": "🦔", "wombat": "🐻", "hyena": "🐕", "jackal": "🐕", "coyote": "🐺", "cheetah": "🐆", "leopard": "🐆", "jaguar": "🐆", "panther": "🐆", "puma": "🐆", "mongoose": "🦦", "tasmanian": "😈", "dingo": "🐕", "sabre-tooth": "🐅", "mammoth": "🦣" }
+            },
+            life: {
+                easy: { "apple": "🍎", "banana": "🍌", "sun": "☀️", "moon": "🌙", "car": "🚗", "house": "🏠", "tree": "🌳", "flower": "🌸", "water": "💧", "fire": "🔥", "star": "⭐", "cloud": "☁️", "rain": "🌧️", "snow": "❄️", "wind": "🌬️", "sky": "🌌", "earth": "🌍", "sea": "🌊", "mountain": "⛰️", "city": "🏙️", "road": "🛣️", "door": "🚪", "window": "🪟", "bed": "🛏️", "table": "🪑", "chair": "🪑", "phone": "📱", "money": "💰", "clock": "⏰", "key": "🔑" },
+                normal: { "orange": "🍊", "grape": "🍇", "watermelon": "🍉", "strawberry": "🍓", "pizza": "🍕", "burger": "🍔", "cake": "🍰", "icecream": "🍨", "bread": "🍞", "cheese": "🧀", "egg": "🥚", "milk": "🥛", "coffee": "☕", "tea": "🍵", "juice": "🧃", "wine": "🍷", "beer": "🍺", "knife": "🔪", "fork": "🍴", "spoon": "🥄", "plate": "🍽️", "bowl": "🥣", "cup": "☕", "glass": "🥛", "bottle": "🍾", "pot": "🍲", "pan": "🍳", "stove": "🔥", "oven": "🔥", "fridge": "🧊" },
+                hard: { "broccoli": "🥦", "cucumber": "🥒", "lettuce": "🥬", "mushroom": "🍄", "onion": "🧅", "garlic": "🧄", "potato": "🥔", "carrot": "🥕", "tomato": "🍅", "corn": "🌽", "avocado": "🥑", "coconut": "🥥", "pineapple": "🍍", "mango": "🥭", "peach": "🍑", "cherry": "🍒", "kiwi": "🥝", "lemon": "🍋", "melon": "🍈", "peanut": "🥜", "chestnut": "🌰", "bacon": "🥓", "steak": "🥩", "sausage": "🌭", "hotdog": "🌭", "sandwich": "🥪", "taco": "🌮", "burrito": "🌯", "popcorn": "🍿", "cookie": "🍪" }
+            }
+        };
+
+        const praiseWords = ['Good!', 'Great!', 'Excellent!', 'Awesome!', 'Perfect!'];
+        let currentTheme = 'school', currentDifficulty = 'easy', cardCount = 16;
+        let targetMatches = 8, flippedCards = [], lockBoard = false, matches = 0, score = 0;
+        let attempts = 0, startTime = 0, timerInterval = null, finalTime = 0;
+        let challengeWord = '', challengeEmoji = '', challengeCards = [];
+        let recognition = null, isRecording = false;
+
+        // Audio
+        let audioCtx;
+        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume() }
+        function playSynth(type, freq, drop, dur) { if (!audioCtx) return; const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = type; o.frequency.setValueAtTime(freq, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(drop, audioCtx.currentTime + dur); g.gain.setValueAtTime(.1, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(.01, audioCtx.currentTime + dur); o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + dur) }
+
+        function speakWord(w) { if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); let u = new SpeechSynthesisUtterance(w); u.lang = 'en-US'; u.rate = 0.85; window.speechSynthesis.speak(u) } }
+
+        // UI Setup
+        $$('#theme-group .segment-btn').forEach(b => { b.onclick = () => { $$('#theme-group .segment-btn').forEach(x => x.classList.remove('selected')); b.classList.add('selected'); currentTheme = b.dataset.val } });
+        $$('#difficulty-group .segment-btn').forEach(b => { b.onclick = () => { $$('#difficulty-group .segment-btn').forEach(x => x.classList.remove('selected')); b.classList.add('selected'); currentDifficulty = b.dataset.val } });
+        $$('#grid-group .segment-btn').forEach(b => { b.onclick = () => { $$('#grid-group .segment-btn').forEach(x => x.classList.remove('selected')); b.classList.add('selected'); cardCount = parseInt(b.dataset.val) } });
+
+        function showScreen(id) { $$('.screen').forEach(el => el.classList.remove('active')); if (id) $(id).classList.add('active') }
+        function quitToMenu() { clearInterval(timerInterval); showScreen('main-menu') }
+
+        function startGame() {
+            initAudio(); matches = 0; score = 0; attempts = 0;
+            generateBoard(); updateHUD();
+            startTime = Date.now();
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 50);
+            showScreen('game-ui');
+        }
+
+        function updateTimer() { $('hud-timer').innerText = ((Date.now() - startTime) / 1000).toFixed(2) + ' s' }
+        function updateHUD() {
+            $('hud-matches').innerText = `MATCHES: ${matches} / ${targetMatches}`;
+            $('hud-score').innerText = `SCORE: ${score}`;
+        }
+
+        function generateDeck() {
+            let words = [], dictMap = {};
+            let themes = currentTheme === 'mixed' ? ['school', 'body', 'animals', 'life'] : [currentTheme];
+            let diffs = currentDifficulty === 'mixed' ? ['easy', 'normal', 'hard'] : [currentDifficulty];
+            for (let t of themes) for (let d of diffs) if (dictionary[t] && dictionary[t][d]) for (let w in dictionary[t][d]) { words.push(w); dictMap[w] = dictionary[t][d][w] }
+            let needed = cardCount / 2, selected = [];
+            let mixed = [...words].sort(() => .5 - Math.random());
+            while (selected.length < needed) { for (let w of mixed) { if (selected.length < needed && !selected.includes(w)) selected.push(w) } if (selected.length < needed) selected.push(mixed[Math.floor(Math.random() * mixed.length)]) }
+            let deck = [];
+            for (let w of selected) { deck.push({ id: w, type: 'word', content: w.toUpperCase(), rawWord: w, emoji: dictMap[w] }); deck.push({ id: w, type: 'emoji', content: dictMap[w], rawWord: w, emoji: dictMap[w] }) }
+            return deck.sort(() => .5 - Math.random());
+        }
+
+        function generateBoard() {
+            const board = $('game-board'); board.innerHTML = '';
+            let cols = cardCount <= 16 ? (cardCount === 12 ? 3 : 4) : 4;
+            let rows = cardCount / cols;
+            board.style.gridTemplateColumns = `repeat(${cols},1fr)`;
+            board.style.gridTemplateRows = `repeat(${rows},1fr)`;
+            targetMatches = cardCount / 2; flippedCards = []; lockBoard = false;
+            generateDeck().forEach(card => {
+                const el = document.createElement('div'); el.className = 'card pixel-border';
+                el.innerHTML = `<div class="card-inner"><div class="card-front">❓</div><div class="card-back"><div class="${card.type === 'emoji' ? 'card-emoji' : 'card-word'}">${card.content}</div></div></div>`;
+                el.dataset.id = card.id; el.dataset.type = card.type; el.dataset.rawWord = card.rawWord; el.dataset.emoji = card.emoji;
+                el.onclick = () => flipCard(el);
+                board.appendChild(el);
+            });
+        }
+
+        function flipCard(el) {
+            if (lockBoard) return;
+            if (el.classList.contains('flipped') || el.classList.contains('matched')) return;
+            el.classList.add('flipped');
+            playSynth('triangle', 600, 300, .1);
+            speakWord(el.dataset.rawWord);
+            flippedCards.push(el);
+            if (flippedCards.length === 2) { attempts++; checkForMatch() }
+        }
+
+        function checkForMatch() {
+            let [c1, c2] = flippedCards;
+            if (c1.dataset.id === c2.dataset.id && c1.dataset.type !== c2.dataset.type) {
+                // Match found → start pronunciation challenge
+                lockBoard = true;
+                challengeWord = c1.dataset.rawWord;
+                challengeEmoji = c1.dataset.emoji;
+                challengeCards = [c1, c2];
+                c1.classList.add('challenge'); c2.classList.add('challenge');
+                flippedCards = [];
+                setTimeout(() => showChallenge(), 800);
+            } else {
+                lockBoard = true;
+                setTimeout(() => { c1.classList.remove('flipped'); c2.classList.remove('flipped'); flippedCards = []; lockBoard = false; playSynth('sawtooth', 200, 100, .2) }, 1200);
+            }
+        }
+
+        // ===== PRONUNCIATION CHALLENGE =====
+        function showChallenge() {
+            $('challenge-word').innerText = challengeWord.toUpperCase();
+            $('challenge-emoji').innerText = challengeEmoji;
+            $('challenge-status').innerText = 'Press the microphone and say the word!';
+            $('challenge-status').style.color = '#FFF';
+            $('accuracy-container').style.display = 'none';
+            $('waveform').classList.remove('active');
+            $('mic-btn').classList.remove('recording');
+            $('challenge-overlay').classList.add('active');
+            isRecording = false;
+            speakWord(challengeWord);
+        }
+
+        function speakChallengeWord() { speakWord(challengeWord) }
+
+        function hideChallenge() { $('challenge-overlay').classList.remove('active') }
+
+        function toggleRecognition() {
+            if (isRecording) { stopRecognition(); return }
+            startRecognition();
+        }
+
+        function startRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                $('challenge-status').innerText = '⚠️ Speech Recognition not supported! Using manual mode...';
+                $('challenge-status').style.color = '#FFD700';
+                setTimeout(() => handleManualPass(), 2000);
+                return;
+            }
+            recognition = new SpeechRecognition();
+            recognition.lang = 'en-US'; recognition.interimResults = false; recognition.maxAlternatives = 5;
+            recognition.continuous = false;
+            isRecording = true;
+            $('mic-btn').classList.add('recording');
+            $('waveform').classList.add('active');
+            $('challenge-status').innerText = '🎤 Listening... Say: "' + challengeWord.toUpperCase() + '"';
+            $('challenge-status').style.color = '#4ade80';
+
+            recognition.onresult = (e) => {
+                let bestAccuracy = 0, bestTranscript = '';
+                for (let i = 0; i < e.results[0].length; i++) {
+                    const t = e.results[0][i].transcript.trim().toLowerCase();
+                    const acc = calcAccuracy(t, challengeWord.toLowerCase());
+                    if (acc > bestAccuracy) { bestAccuracy = acc; bestTranscript = t }
+                }
+                showAccuracyResult(bestAccuracy, bestTranscript);
+            };
+            recognition.onerror = (e) => {
+                console.error('SR error:', e.error);
+                isRecording = false;
+                $('mic-btn').classList.remove('recording');
+                $('waveform').classList.remove('active');
+                if (e.error === 'no-speech') { $('challenge-status').innerText = 'No speech detected. Try again!'; $('challenge-status').style.color = '#FFD700' }
+                else { $('challenge-status').innerText = 'Error: ' + e.error + '. Try again!'; $('challenge-status').style.color = 'var(--btn-red)' }
+            };
+            recognition.onend = () => { isRecording = false; $('mic-btn').classList.remove('recording'); $('waveform').classList.remove('active') };
+            recognition.start();
+        }
+
+        function stopRecognition() { if (recognition) { recognition.stop(); isRecording = false; $('mic-btn').classList.remove('recording'); $('waveform').classList.remove('active') } }
+
+        function calcAccuracy(spoken, target) {
+            if (spoken === target) return 100;
+            // Check if target is contained in spoken text
+            if (spoken.includes(target)) return 95;
+            // Levenshtein distance
+            const m = spoken.length, n = target.length;
+            if (m === 0) return 0; if (n === 0) return 0;
+            const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+            for (let i = 0; i <= m; i++)dp[i][0] = i;
+            for (let j = 0; j <= n; j++)dp[0][j] = j;
+            for (let i = 1; i <= m; i++)for (let j = 1; j <= n; j++) {
+                const cost = spoken[i - 1] === target[j - 1] ? 0 : 1;
+                dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+            }
+            return Math.max(0, Math.round((1 - dp[m][n] / Math.max(m, n)) * 100));
+        }
+
+        function showAccuracyResult(accuracy, transcript) {
+            $('accuracy-container').style.display = 'block';
+            const bar = $('accuracy-bar'); const label = $('accuracy-label');
+            bar.style.width = accuracy + '%';
+            bar.style.background = accuracy >= 80 ? 'var(--btn-green)' : accuracy >= 50 ? 'var(--btn-yellow)' : 'var(--btn-red)';
+            label.innerText = accuracy + '%';
+
+            if (accuracy >= 80) {
+                // SUCCESS
+                $('challenge-status').innerHTML = '✅ <span style="color:#4ade80">' + transcript.toUpperCase() + '</span> — Correct! 🎉';
+                $('challenge-status').style.color = '#4ade80';
+                playSynth('square', 440, 880, .1);
+                setTimeout(() => playSynth('square', 660, 1320, .15), 100);
+                let bonus = attempts <= targetMatches ? 5 : 0;
+                score += 10 + bonus;
+                updateHUD();
+                // Show score popup
+                showScorePopup(10 + bonus);
+                setTimeout(() => {
+                    hideChallenge();
+                    challengeCards.forEach(c => { c.classList.remove('challenge'); c.classList.add('matched') });
+                    matches++; updateHUD(); lockBoard = false;
+                    if (Math.random() < .5) speakWord(praiseWords[Math.floor(Math.random() * praiseWords.length)]);
+                    if (matches === targetMatches) setTimeout(win, 500);
+                }, 1500);
+            } else {
+                // FAIL
+                $('challenge-status').innerHTML = '❌ You said: "<span style="color:#f87171">' + transcript.toUpperCase() + '</span>" — Try again!';
+                $('challenge-status').style.color = '#f87171';
+                playSynth('sawtooth', 200, 100, .2);
+                setTimeout(() => {
+                    hideChallenge();
+                    challengeCards.forEach(c => { c.classList.remove('challenge'); c.classList.remove('flipped') });
+                    challengeCards = []; lockBoard = false;
+                }, 2000);
+            }
+        }
+
+        function handleManualPass() {
+            // Fallback for browsers without SpeechRecognition
+            score += 10; matches++; updateHUD();
+            challengeCards.forEach(c => { c.classList.remove('challenge'); c.classList.add('matched') });
+            hideChallenge(); lockBoard = false;
+            if (matches === targetMatches) setTimeout(win, 500);
+        }
+
+        function showScorePopup(pts) {
+            const popup = document.createElement('div'); popup.className = 'score-popup'; popup.innerText = '+' + pts;
+            popup.style.left = '50%'; popup.style.top = '40%';
+            document.body.appendChild(popup);
+            setTimeout(() => popup.remove(), 1000);
+        }
+
+        function win() {
+            clearInterval(timerInterval);
+            finalTime = (Date.now() - startTime) / 1000;
+            $('final-time').innerText = finalTime.toFixed(2);
+            $('final-score').innerText = score;
+            let bestKey = 'pronBest_' + cardCount;
+            let bestTime = localStorage.getItem(bestKey);
+            if (!bestTime || finalTime < parseFloat(bestTime)) {
+                localStorage.setItem(bestKey, finalTime.toFixed(2));
+                $('new-record-msg').style.display = 'block';
+            } else { $('new-record-msg').style.display = 'none' }
+            updateBestRecordsUI();
+            showScreen('victory-menu');
+            playSynth('square', 600, 1200, .2);
+            setTimeout(() => playSynth('square', 800, 1600, .4), 250);
+            speakWord('Congratulations! All matched!');
+        }
+
+        function updateBestRecordsUI() {
+            [12, 16, 20, 24].forEach(n => {
+                let el = $('best-' + n); if (el) { let v = localStorage.getItem('pronBest_' + n); el.innerText = v || '--.--' }
+            });
+        }
+        updateBestRecordsUI();
+    </script>
+</body>
+
+</html>
