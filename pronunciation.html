@@ -662,6 +662,155 @@
             }
         }
 
+        /* Streak indicator */
+        .streak-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 12;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            padding: 10px
+        }
+
+        .streak-inner {
+            background: rgba(0, 0, 0, .8);
+            border: 3px solid var(--btn-yellow);
+            padding: 6px 20px;
+            color: var(--text-gold);
+            font-size: 1.4rem;
+            text-shadow: 1px 1px 0 #000;
+            display: none;
+            animation: streakIn .3s ease-out
+        }
+
+        .streak-inner.show {
+            display: block
+        }
+
+        @keyframes streakIn {
+            0% {
+                transform: scale(0.5);
+                opacity: 0
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1
+            }
+        }
+
+        /* Word book */
+        #wordbook-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, .85);
+            z-index: 25;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto
+        }
+
+        #wordbook-overlay.active {
+            display: flex
+        }
+
+        .wordbook-panel {
+            background: var(--panel-bg);
+            padding: 20px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            gap: 10px
+        }
+
+        .wordbook-title {
+            font-size: 2.5rem;
+            text-align: center;
+            color: #000;
+            text-shadow: 2px 2px 0 var(--btn-yellow)
+        }
+
+        .wordbook-list {
+            overflow-y: auto;
+            max-height: 50vh;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 8px;
+            padding: 5px
+        }
+
+        .wordbook-item {
+            background: #222;
+            border: 3px solid var(--panel-inner-dark);
+            padding: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform .1s
+        }
+
+        .wordbook-item:hover {
+            transform: scale(1.05);
+            border-color: var(--btn-yellow)
+        }
+
+        .wordbook-item .wb-emoji {
+            font-size: 1.8rem
+        }
+
+        .wordbook-item .wb-word {
+            color: #FFF;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            margin-top: 4px
+        }
+
+        .wordbook-empty {
+            text-align: center;
+            color: #555;
+            font-size: 1.3rem;
+            padding: 30px
+        }
+
+        /* Audio-only card (高級 mode) */
+        .card-audio-only .card-back {
+            background: #2a2a2a;
+            justify-content: center
+        }
+
+        .card-audio-icon {
+            font-size: 2.5rem;
+            animation: audioPulse 1.5s infinite
+        }
+
+        @keyframes audioPulse {
+
+            0%,
+            100% {
+                opacity: .5
+            }
+
+            50% {
+                opacity: 1
+            }
+        }
+
+        /* Phonetics card */
+        .card-phonetic {
+            font-size: clamp(1rem, 4vw, 1.6rem);
+            color: #555;
+            font-style: italic;
+            padding: 3px
+        }
+
         @media(max-width:500px) {
             .hud-center-panel {
                 display: none
@@ -687,6 +836,12 @@
                 <div class="segment-btn" data-val="life">LIFE</div>
                 <div class="segment-btn" data-val="mixed" style="background:var(--btn-yellow)">ALL MIXED</div>
             </div>
+            <div class="section-title" style="margin-top:5px">[ 遊戲模式 GAME MODE ]</div>
+            <div class="segment-group" id="mode-group">
+                <div class="segment-btn selected" data-val="beginner">🟢 初級 (圖對圖)</div>
+                <div class="segment-btn" data-val="intermediate">🟡 中級 (圖對音標)</div>
+                <div class="segment-btn" data-val="advanced">🔴 高級 (聽力挑戰)</div>
+            </div>
             <div class="section-title" style="margin-top:5px">[ 選擇難度 DIFFICULTY ]</div>
             <div class="segment-group" id="difficulty-group">
                 <div class="segment-btn selected" data-val="easy">EASY</div>
@@ -711,6 +866,8 @@
         </div>
         <div class="action-area">
             <button class="btn pixel-border btn-green" onclick="startGame()">▶ PLAY NOW</button>
+            <button class="btn pixel-border btn-yellow" onclick="showWordBook()"
+                style="font-size:1.5rem;padding:10px 30px">📖 單字本 WORD BOOK</button>
             <button class="btn pixel-border" onclick="window.location.href='index.html'"
                 style="margin-top:20px;font-size:1.2rem">↲ BACK TO HOMEPAGE</button>
         </div>
@@ -735,6 +892,9 @@
                     <button class="hud-btn hud-btn-exit" onclick="quitToMenu()">↲ EXIT</button>
                 </div>
             </div>
+        </div>
+        <div class="streak-bar">
+            <div class="streak-inner" id="streak-display">🔥 STREAK: 0</div>
         </div>
         <div id="game-board"></div>
         <div id="challenge-overlay">
@@ -772,9 +932,26 @@
                 🎉 NEW RECORD! 🎉</div>
             <div id="victory-stats" style="font-size:1.5rem;background:#000;color:#FFF;padding:10px">
                 Time: <span id="final-time" style="color:var(--text-gold)">00.00</span> s<br>
-                Score: <span id="final-score" style="color:var(--text-gold)">0</span>
+                Score: <span id="final-score" style="color:var(--text-gold)">0</span><br>
+                Best Streak: <span id="final-streak" style="color:#FF6347">0</span> 🔥
             </div>
+            <button class="btn pixel-border btn-blue" style="font-size:1.5rem" onclick="showWordBook()">📖
+                查看單字本</button>
             <button class="btn pixel-border btn-yellow" style="font-size:2rem" onclick="quitToMenu()">CONTINUE</button>
+        </div>
+    </div>
+
+    <div id="wordbook-overlay">
+        <div class="wordbook-panel pixel-border">
+            <div class="wordbook-title">📖 單字本</div>
+            <div style="text-align:center;font-size:1.1rem;color:#555">點擊單字可以聽發音 / Click to hear pronunciation</div>
+            <div class="wordbook-list" id="wordbook-list"></div>
+            <div style="display:flex;gap:10px;justify-content:center;margin-top:10px">
+                <button class="btn pixel-border btn-red" onclick="clearWordBook()" style="font-size:1rem">🗑️
+                    清空</button>
+                <button class="btn pixel-border btn-yellow" onclick="hideWordBook()" style="font-size:1.3rem">↲
+                    CLOSE</button>
+            </div>
         </div>
     </div>
 
@@ -808,11 +985,21 @@
         };
 
         const praiseWords = ['Good!', 'Great!', 'Excellent!', 'Awesome!', 'Perfect!'];
+        // IPA phonetics for common words
+        const phonetics = { "book": "/bʊk/", "pen": "/pɛn/", "pencil": "/ˈpɛnsəl/", "desk": "/dɛsk/", "bag": "/bæɡ/", "clock": "/klɑk/", "map": "/mæp/", "ruler": "/ˈrulər/", "eraser": "/ɪˈreɪsər/", "bus": "/bʌs/", "bell": "/bɛl/", "paper": "/ˈpeɪpər/", "student": "/ˈstudənt/", "teacher": "/ˈtiːtʃər/", "dog": "/dɑɡ/", "cat": "/kæt/", "bird": "/bɜrd/", "fish": "/fɪʃ/", "pig": "/pɪɡ/", "cow": "/kaʊ/", "horse": "/hɔrs/", "sheep": "/ʃiːp/", "duck": "/dʌk/", "chicken": "/ˈtʃɪkən/", "mouse": "/maʊs/", "bear": "/bɛr/", "lion": "/ˈlaɪən/", "tiger": "/ˈtaɪɡər/", "monkey": "/ˈmʌŋki/", "elephant": "/ˈɛləfənt/", "eye": "/aɪ/", "ear": "/ɪr/", "nose": "/noʊz/", "mouth": "/maʊθ/", "hand": "/hænd/", "head": "/hɛd/", "arm": "/ɑrm/", "leg": "/lɛɡ/", "foot": "/fʊt/", "hair": "/hɛr/", "apple": "/ˈæpəl/", "banana": "/bəˈnænə/", "sun": "/sʌn/", "moon": "/muːn/", "car": "/kɑr/", "house": "/haʊs/", "tree": "/triː/", "flower": "/ˈflaʊər/", "water": "/ˈwɑːtər/", "fire": "/ˈfaɪər/" };
         let currentTheme = 'school', currentDifficulty = 'easy', cardCount = 16;
+        let gameMode = 'beginner'; // 'beginner'|'intermediate'|'advanced'
         let targetMatches = 8, flippedCards = [], lockBoard = false, matches = 0, score = 0;
         let attempts = 0, startTime = 0, timerInterval = null, finalTime = 0;
         let challengeWord = '', challengeEmoji = '', challengeCards = [];
         let recognition = null, isRecording = false;
+        // Streak & musical feedback
+        let streak = 0, bestStreak = 0;
+        const scaleNotes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25]; // C4-C5
+        // Word book
+        let sessionWords = []; // words collected this game
+        function getWordBook() { return JSON.parse(localStorage.getItem('pronWordBook') || '[]') }
+        function saveWordBook(wb) { localStorage.setItem('pronWordBook', JSON.stringify(wb)) }
 
         // Audio
         let audioCtx;
@@ -823,6 +1010,7 @@
 
         // UI Setup
         $$('#theme-group .segment-btn').forEach(b => { b.onclick = () => { $$('#theme-group .segment-btn').forEach(x => x.classList.remove('selected')); b.classList.add('selected'); currentTheme = b.dataset.val } });
+        $$('#mode-group .segment-btn').forEach(b => { b.onclick = () => { $$('#mode-group .segment-btn').forEach(x => x.classList.remove('selected')); b.classList.add('selected'); gameMode = b.dataset.val } });
         $$('#difficulty-group .segment-btn').forEach(b => { b.onclick = () => { $$('#difficulty-group .segment-btn').forEach(x => x.classList.remove('selected')); b.classList.add('selected'); currentDifficulty = b.dataset.val } });
         $$('#grid-group .segment-btn').forEach(b => { b.onclick = () => { $$('#grid-group .segment-btn').forEach(x => x.classList.remove('selected')); b.classList.add('selected'); cardCount = parseInt(b.dataset.val) } });
 
@@ -831,6 +1019,8 @@
 
         function startGame() {
             initAudio(); matches = 0; score = 0; attempts = 0;
+            streak = 0; bestStreak = 0; sessionWords = [];
+            updateStreakDisplay();
             generateBoard(); updateHUD();
             startTime = Date.now();
             if (timerInterval) clearInterval(timerInterval);
@@ -853,7 +1043,22 @@
             let mixed = [...words].sort(() => .5 - Math.random());
             while (selected.length < needed) { for (let w of mixed) { if (selected.length < needed && !selected.includes(w)) selected.push(w) } if (selected.length < needed) selected.push(mixed[Math.floor(Math.random() * mixed.length)]) }
             let deck = [];
-            for (let w of selected) { deck.push({ id: w, type: 'word', content: w.toUpperCase(), rawWord: w, emoji: dictMap[w] }); deck.push({ id: w, type: 'emoji', content: dictMap[w], rawWord: w, emoji: dictMap[w] }) }
+            for (let w of selected) {
+                if (gameMode === 'beginner') {
+                    // Emoji ↔ Emoji (both show emoji, one also shows word)
+                    deck.push({ id: w, type: 'word', content: w.toUpperCase(), rawWord: w, emoji: dictMap[w], cardClass: '' });
+                    deck.push({ id: w, type: 'emoji', content: dictMap[w], rawWord: w, emoji: dictMap[w], cardClass: '' });
+                } else if (gameMode === 'intermediate') {
+                    // Emoji ↔ Phonetics
+                    deck.push({ id: w, type: 'emoji', content: dictMap[w], rawWord: w, emoji: dictMap[w], cardClass: '' });
+                    let ipa = phonetics[w] || '/' + w + '/';
+                    deck.push({ id: w, type: 'phonetic', content: ipa, rawWord: w, emoji: dictMap[w], cardClass: '' });
+                } else {
+                    // Advanced: Audio-only ↔ Emoji
+                    deck.push({ id: w, type: 'emoji', content: dictMap[w], rawWord: w, emoji: dictMap[w], cardClass: '' });
+                    deck.push({ id: w, type: 'audio', content: '🔊', rawWord: w, emoji: dictMap[w], cardClass: 'card-audio-only' });
+                }
+            }
             return deck.sort(() => .5 - Math.random());
         }
 
@@ -865,8 +1070,13 @@
             board.style.gridTemplateRows = `repeat(${rows},1fr)`;
             targetMatches = cardCount / 2; flippedCards = []; lockBoard = false;
             generateDeck().forEach(card => {
-                const el = document.createElement('div'); el.className = 'card pixel-border';
-                el.innerHTML = `<div class="card-inner"><div class="card-front">❓</div><div class="card-back"><div class="${card.type === 'emoji' ? 'card-emoji' : 'card-word'}">${card.content}</div></div></div>`;
+                const el = document.createElement('div'); el.className = 'card pixel-border ' + (card.cardClass || '');
+                let backContent = '';
+                if (card.type === 'emoji') backContent = `<div class="card-emoji">${card.content}</div>`;
+                else if (card.type === 'word') backContent = `<div class="card-word">${card.content}</div>`;
+                else if (card.type === 'phonetic') backContent = `<div class="card-phonetic">${card.content}</div>`;
+                else if (card.type === 'audio') backContent = `<div class="card-audio-icon">🔊</div><div style="font-size:1rem;color:#aaa;margin-top:5px">LISTEN</div>`;
+                el.innerHTML = `<div class="card-inner"><div class="card-front">❓</div><div class="card-back">${backContent}</div></div>`;
                 el.dataset.id = card.id; el.dataset.type = card.type; el.dataset.rawWord = card.rawWord; el.dataset.emoji = card.emoji;
                 el.onclick = () => flipCard(el);
                 board.appendChild(el);
@@ -886,7 +1096,6 @@
         function checkForMatch() {
             let [c1, c2] = flippedCards;
             if (c1.dataset.id === c2.dataset.id && c1.dataset.type !== c2.dataset.type) {
-                // Match found → start pronunciation challenge
                 lockBoard = true;
                 challengeWord = c1.dataset.rawWord;
                 challengeEmoji = c1.dataset.emoji;
@@ -895,6 +1104,7 @@
                 flippedCards = [];
                 setTimeout(() => showChallenge(), 800);
             } else {
+                streak = 0; updateStreakDisplay();
                 lockBoard = true;
                 setTimeout(() => { c1.classList.remove('flipped'); c2.classList.remove('flipped'); flippedCards = []; lockBoard = false; playSynth('sawtooth', 200, 100, .2) }, 1200);
             }
@@ -988,16 +1198,21 @@
             label.innerText = accuracy + '%';
 
             if (accuracy >= 80) {
-                // SUCCESS
+                // SUCCESS — musical scale feedback
+                streak++;
+                if (streak > bestStreak) bestStreak = streak;
+                updateStreakDisplay();
+                let noteIdx = Math.min(streak - 1, scaleNotes.length - 1);
+                playMusicalNote(scaleNotes[noteIdx], .15);
+                if (streak > 1) setTimeout(() => playMusicalNote(scaleNotes[noteIdx] * 1.5, .1), 120);
                 $('challenge-status').innerHTML = '✅ <span style="color:#4ade80">' + transcript.toUpperCase() + '</span> — Correct! 🎉';
                 $('challenge-status').style.color = '#4ade80';
-                playSynth('square', 440, 880, .1);
-                setTimeout(() => playSynth('square', 660, 1320, .15), 100);
-                let bonus = attempts <= targetMatches ? 5 : 0;
+                let bonus = (attempts <= targetMatches ? 5 : 0) + Math.min(streak * 2, 20);
                 score += 10 + bonus;
                 updateHUD();
-                // Show score popup
                 showScorePopup(10 + bonus);
+                // Add to word book
+                addToWordBook(challengeWord, challengeEmoji);
                 setTimeout(() => {
                     hideChallenge();
                     challengeCards.forEach(c => { c.classList.remove('challenge'); c.classList.add('matched') });
@@ -1007,6 +1222,7 @@
                 }, 1500);
             } else {
                 // FAIL
+                streak = 0; updateStreakDisplay();
                 $('challenge-status').innerHTML = '❌ You said: "<span style="color:#f87171">' + transcript.toUpperCase() + '</span>" — Try again!';
                 $('challenge-status').style.color = '#f87171';
                 playSynth('sawtooth', 200, 100, .2);
@@ -1038,6 +1254,7 @@
             finalTime = (Date.now() - startTime) / 1000;
             $('final-time').innerText = finalTime.toFixed(2);
             $('final-score').innerText = score;
+            $('final-streak').innerText = bestStreak;
             let bestKey = 'pronBest_' + cardCount;
             let bestTime = localStorage.getItem(bestKey);
             if (!bestTime || finalTime < parseFloat(bestTime)) {
@@ -1046,10 +1263,56 @@
             } else { $('new-record-msg').style.display = 'none' }
             updateBestRecordsUI();
             showScreen('victory-menu');
-            playSynth('square', 600, 1200, .2);
-            setTimeout(() => playSynth('square', 800, 1600, .4), 250);
+            // Victory fanfare — play ascending scale
+            scaleNotes.forEach((n, i) => setTimeout(() => playMusicalNote(n, .12), i * 100));
             speakWord('Congratulations! All matched!');
         }
+
+        // ===== MUSICAL FEEDBACK =====
+        function playMusicalNote(freq, dur) {
+            if (!audioCtx) return;
+            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+            o.type = 'sine'; o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+            o.connect(g); g.connect(audioCtx.destination);
+            o.start(); o.stop(audioCtx.currentTime + dur);
+        }
+
+        function updateStreakDisplay() {
+            const el = $('streak-display');
+            if (streak >= 2) {
+                el.innerText = '🔥 STREAK: ' + streak + (streak >= 5 ? ' 🎵' : '');
+                el.classList.add('show');
+            } else { el.classList.remove('show') }
+        }
+
+        // ===== WORD BOOK =====
+        function addToWordBook(word, emoji) {
+            if (!sessionWords.find(w => w.word === word)) sessionWords.push({ word, emoji });
+            let wb = getWordBook();
+            if (!wb.find(w => w.word === word)) { wb.push({ word, emoji, date: new Date().toLocaleDateString() }); saveWordBook(wb) }
+        }
+
+        function showWordBook() {
+            const list = $('wordbook-list');
+            const wb = getWordBook();
+            list.innerHTML = '';
+            if (wb.length === 0) {
+                list.innerHTML = '<div class="wordbook-empty">還沒有收集到的單字！<br>No words collected yet!</div>';
+            } else {
+                wb.forEach(item => {
+                    const el = document.createElement('div'); el.className = 'wordbook-item pixel-border';
+                    el.innerHTML = `<div class="wb-emoji">${item.emoji}</div><div class="wb-word">${item.word}</div>`;
+                    el.onclick = () => speakWord(item.word);
+                    list.appendChild(el);
+                });
+            }
+            $('wordbook-overlay').classList.add('active');
+        }
+
+        function hideWordBook() { $('wordbook-overlay').classList.remove('active') }
+        function clearWordBook() { if (confirm('確定要清空單字本嗎？')) { saveWordBook([]); showWordBook() } }
 
         function updateBestRecordsUI() {
             [12, 16, 20, 24].forEach(n => {
